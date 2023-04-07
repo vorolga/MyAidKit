@@ -515,7 +515,7 @@ func (p *profileHandler) GetFamily() echo.HandlerFunc {
 			return p.ParseError(ctx, requestID, err)
 		}
 
-		var membersResult []models.Member
+		membersResult := make([]models.Member, 0)
 		for _, member := range family.ResponseMemberData {
 			membersResult = append(membersResult, models.Member{
 				ID:     member.ID,
@@ -527,7 +527,7 @@ func (p *profileHandler) GetFamily() echo.HandlerFunc {
 		}
 
 		resp, err := easyjson.Marshal(&models.ResponseMembers{
-			Status:  0,
+			Status:  200,
 			Members: membersResult,
 		})
 		if err != nil {

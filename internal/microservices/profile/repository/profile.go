@@ -320,6 +320,10 @@ func (s Storage) GetFamily(userID int64) ([]*proto.ResponseMemberData, error) {
 		if err = rows.Scan(&member.ID, &member.Name, &member.Avatar, &member.IsAdult); err != nil {
 			return nil, err
 		}
+		member.Avatar, err = images.GenerateFileURL(member.Avatar, constants.UserObjectsBucketName)
+		if err != nil {
+			return nil, err
+		}
 		members = append(members, &member)
 	}
 
@@ -336,6 +340,10 @@ func (s Storage) GetFamily(userID int64) ([]*proto.ResponseMemberData, error) {
 		member.IsAdult = false
 		member.IsUser = false
 		if err = rows.Scan(&member.ID, &member.Name, &member.Avatar); err != nil {
+			return nil, err
+		}
+		member.Avatar, err = images.GenerateFileURL(member.Avatar, constants.UserObjectsBucketName)
+		if err != nil {
 			return nil, err
 		}
 		members = append(members, &member)
