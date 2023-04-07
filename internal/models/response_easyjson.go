@@ -121,6 +121,8 @@ func easyjson6ff3ac1dDecodeMainInternalModels1(in *jlexer.Lexer, out *ProfileUse
 			continue
 		}
 		switch key {
+		case "id":
+			out.ID = int64(in.Int64())
 		case "name":
 			out.Name = string(in.String())
 		case "surname":
@@ -150,8 +152,13 @@ func easyjson6ff3ac1dEncodeMainInternalModels1(out *jwriter.Writer, in ProfileUs
 	first := true
 	_ = first
 	{
-		const prefix string = ",\"name\":"
+		const prefix string = ",\"id\":"
 		out.RawString(prefix[1:])
+		out.Int64(int64(in.ID))
+	}
+	{
+		const prefix string = ",\"name\":"
+		out.RawString(prefix)
 		out.String(string(in.Name))
 	}
 	{

@@ -1,6 +1,7 @@
 package models
 
 type ProfileUserDTO struct {
+	ID      int64  `json:"id" form:"id"`
 	Name    string `json:"name" form:"name"`
 	Surname string `json:"surname" form:"surname"`
 	Email   string `json:"email" form:"email"`

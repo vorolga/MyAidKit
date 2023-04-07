@@ -47,6 +47,7 @@ const (
 	MemberIsAdded          = "Member is added"
 	NotMainUser            = "Not main user"
 	InvitationIsSent       = "Invitation is sent"
+	InvitationIsAccepted   = "Invitation is accepted"
 )
 
 const (

@@ -37,7 +37,7 @@ func (p *profileHandler) Register(router *echo.Echo) {
 	router.PUT(constants.EditURL, p.EditProfile())
 	router.PUT(constants.AvatarURL, p.EditAvatar())
 	router.GET(constants.CsrfURL, p.GetCsrf())
-	//router.GET(constants.AcceptInvitationURL, p.AcceptInvitation())
+	router.GET(constants.AcceptInvitationURL, p.AcceptInvitation())
 	router.POST(constants.InviteURL, p.Invite())
 	router.POST(constants.CreateFamilyURL, p.CreateFamily())
 	router.DELETE(constants.DeleteFamilyURL, p.DeleteFamily())
@@ -145,6 +145,7 @@ func (p *profileHandler) GetUserProfile() echo.HandlerFunc {
 		)
 
 		profileData := models.ProfileUserDTO{
+			ID:      userID,
 			Name:    userData.Name,
 			Surname: userData.Surname,
 			Email:   userData.Email,
@@ -543,7 +544,7 @@ func (p *profileHandler) Invite() echo.HandlerFunc {
 			return err
 		}
 
-		userData := models.EmailUserDTO{}
+		userData := models.InviteUserDTO{}
 
 		if err = ctx.Bind(&userData); err != nil {
 			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusBadRequest)
@@ -575,7 +576,9 @@ func (p *profileHandler) Invite() echo.HandlerFunc {
 		port := "587"
 
 		msg := "Вам пришло приглашение в семью\r\n" +
-			"Чтобы принять, перейдите по ссылке: " + "http://" + os.Getenv("HOST") + "/accept?family=" + strconv.Itoa(int(hasFamilyResp.IDFamily))
+			"Чтобы принять, перейдите по ссылке: " + "http://" + os.Getenv("HOST") +
+			"/accept?family=" + strconv.Itoa(int(hasFamilyResp.IDFamily)) +
+			"&email=" + userData.Email + "&adult=" + strconv.FormatBool(userData.Adult)
 
 		body := []byte(msg)
 
@@ -596,63 +599,59 @@ func (p *profileHandler) Invite() echo.HandlerFunc {
 	}
 }
 
-//func (p *profileHandler) Invite() echo.HandlerFunc {
-//	return func(ctx echo.Context) error {
-//		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
-//		if err != nil {
-//			return err
-//		}
-//		data := &profile.UserID{ID: userID}
-//		var idFamily int64
-//		hasFamilyData, err := p.profileMicroservice.HasFamily(context.Background(), data)
-//		if err != nil {
-//			return p.ParseError(ctx, requestID, err)
-//		}
-//
-//		if hasFamilyData.Has == false || hasFamilyData.IDMainUser != userID {
-//			p.logger.Info(
-//				zap.String("ID", requestID),
-//				zap.String("ERROR", err.Error()),
-//				zap.Int("ANSWER STATUS", http.StatusBadRequest),
-//			)
-//			resp, err := easyjson.Marshal(&models.Response{
-//				Status:  http.StatusBadRequest,
-//				Message: "bad request",
-//			})
-//			if err != nil {
-//				return ctx.NoContent(http.StatusInternalServerError)
-//			}
-//			return ctx.JSONBlob(http.StatusBadRequest, resp)
-//		}
-//
-//		idFamily = hasFamilyData.IDFamily
-//		userData := models.EmailUserDTO{}
-//		if err := ctx.Bind(&userData); err != nil {
-//			return p.ParseError(ctx, requestID, err)
-//		}
-//
-//		p.logger.Info(
-//			zap.String("ID", requestID),
-//			zap.Int("ANSWER STATUS", http.StatusOK),
-//			userData,
-//		)
-//
-//		profileData := models.ProfileUserDTO{
-//			Name:   userData.Name,
-//			Email:  userData.Email,
-//			Avatar: userData.Avatar,
-//			Date:   userData.Date,
-//		}
-//
-//		sanitizer := bluemonday.UGCPolicy()
-//		profileData.Name = sanitizer.Sanitize(profileData.Name)
-//		resp, err := easyjson.Marshal(&models.ResponseUserProfile{
-//			Status:   http.StatusOK,
-//			UserData: &profileData,
-//		})
-//		if err != nil {
-//			return ctx.NoContent(http.StatusInternalServerError)
-//		}
-//		return ctx.JSONBlob(http.StatusOK, resp)
-//	}
-//}
+func (p *profileHandler) AcceptInvitation() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		requestID, ok := ctx.Get("REQUEST_ID").(string)
+		if !ok {
+			p.logger.Error(
+				zap.String("ERROR", constants.NoRequestID),
+				zap.Int("ANSWER STATUS", http.StatusInternalServerError))
+			resp, err := easyjson.Marshal(&models.Response{
+				Status:  http.StatusInternalServerError,
+				Message: constants.NoRequestID,
+			})
+			if err != nil {
+				return ctx.NoContent(http.StatusInternalServerError)
+			}
+			return ctx.JSONBlob(http.StatusInternalServerError, resp)
+		}
+
+		family := ctx.QueryParam("family")
+		email := ctx.QueryParam("email")
+		adult := ctx.QueryParam("adult")
+
+		familyID, err := strconv.Atoi(family)
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+
+		isAdult, err := strconv.ParseBool(adult)
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+
+		data := &profile.AddToFamily{
+			ID:      int64(familyID),
+			Email:   email,
+			IsAdult: isAdult,
+		}
+		_, err = p.profileMicroservice.AcceptInvitationToFamily(context.Background(), data)
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+
+		p.logger.Info(
+			zap.String("ID", requestID),
+			zap.Int("ANSWER STATUS", http.StatusOK),
+		)
+
+		resp, err := easyjson.Marshal(&models.Response{
+			Status:  http.StatusOK,
+			Message: constants.EmailConfirmed,
+		})
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, resp)
+	}
+}
