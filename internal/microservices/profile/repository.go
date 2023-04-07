@@ -18,7 +18,7 @@ type Storage interface {
 
 	AcceptInvitationToFamily(data *proto.AddToFamily) error
 	DeleteFromFamily(userID int64) error
-	DeleteMember(userID int64) error
+	DeleteMember(userID int64) (string, error)
 	AddMember(data *proto.MemberData) error
 	GetFamily(userID int64) ([]*proto.ResponseMemberData, error)
 }

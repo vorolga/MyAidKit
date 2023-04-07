@@ -187,9 +187,16 @@ func (s *Service) DeleteMember(ctx context.Context, Delete *proto.Delete) (*prot
 		return &proto.Empty{}, status.Error(codes.Internal, constants.ErrNotAvailableForDelete.Error())
 	}
 
-	err = s.storage.DeleteMember(Delete.UserToDelete.ID)
+	avatar, err := s.storage.DeleteMember(Delete.UserToDelete.ID)
 	if err != nil {
 		return &proto.Empty{}, status.Error(codes.Internal, err.Error())
+	}
+
+	if avatar != constants.DefaultImage {
+		err = s.storage.DeleteFile(avatar)
+		if err != nil {
+			return &proto.Empty{}, status.Error(codes.Internal, err.Error())
+		}
 	}
 
 	return &proto.Empty{}, nil

@@ -428,7 +428,7 @@ func (p *profileHandler) RemoveMember() echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		data := &profile.Delete{UserID: &profile.UserID{ID: userID}}
+		data := &profile.Delete{UserID: &profile.UserID{ID: userID}, UserToDelete: &profile.UserID{ID: 0}}
 
 		userData := models.UserIDDTO{}
 
@@ -461,14 +461,71 @@ func (p *profileHandler) RemoveMember() echo.HandlerFunc {
 func (p *profileHandler) AddMember() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
-		if err != nil {
-			return err
+
+		fileName := constants.DefaultImage
+		file, err := ctx.FormFile("file")
+		if err == nil {
+			src, err := file.Open()
+			if err != nil {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+
+			buffer := make([]byte, file.Size)
+			_, err = src.Read(buffer)
+			if err != nil {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+			err = src.Close()
+			if err != nil {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+
+			file, err = ctx.FormFile("file")
+			if err != nil {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+			src, err = file.Open()
+			defer func(src multipart.File) {
+				err = src.Close()
+				if err != nil {
+					return
+				}
+			}(src)
+			if err != nil {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+
+			fileType := http.DetectContentType(buffer)
+
+			// Validate File Type
+			if _, ex := constants.ImageTypes[fileType]; !ex {
+				return constants.RespError(ctx, p.logger, requestID, constants.FileTypeIsNotSupported, http.StatusBadRequest)
+			}
+
+			uploadData := &profile.UploadInputFile{
+				ID:          userID,
+				File:        buffer,
+				Size:        file.Size,
+				ContentType: fileType,
+			}
+
+			name, err := p.profileMicroservice.UploadAvatar(context.Background(), uploadData)
+			if err != nil {
+				return p.ParseError(ctx, requestID, err)
+			}
+
+			fileName = name.Name
+		} else {
+			if err.Error() != "http: no such file" {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
 		}
+
 		data := &profile.MemberData{
 			IDFamily:   0,
 			IDMainUser: userID,
 			Name:       "",
-			Avatar:     "",
+			Avatar:     fileName,
 		}
 
 		userData := models.MemberDTO{}
@@ -478,7 +535,6 @@ func (p *profileHandler) AddMember() echo.HandlerFunc {
 		}
 
 		data.Name = userData.Name
-		data.Avatar = userData.Avatar
 		_, err = p.profileMicroservice.AddMember(context.Background(), data)
 		if err != nil {
 			return p.ParseError(ctx, requestID, err)

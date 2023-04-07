@@ -27,8 +27,7 @@ type UserIDDTO struct {
 }
 
 type MemberDTO struct {
-	Name   string `json:"name" form:"name"`
-	Avatar string `json:"avatar" form:"avatar"`
+	Name string `json:"name" form:"name"`
 }
 
 type Member struct {
