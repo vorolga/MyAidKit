@@ -27,6 +27,14 @@ type ProfileClient interface {
 	EditAvatar(ctx context.Context, in *EditAvatarData, opts ...grpc.CallOption) (*Empty, error)
 	UploadAvatar(ctx context.Context, in *UploadInputFile, opts ...grpc.CallOption) (*FileName, error)
 	GetAvatar(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*FileName, error)
+	AcceptInvitationToFamily(ctx context.Context, in *AddToFamily, opts ...grpc.CallOption) (*Empty, error)
+	CreateFamily(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*Empty, error)
+	DeleteFamily(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*Empty, error)
+	DeleteFromFamily(ctx context.Context, in *Delete, opts ...grpc.CallOption) (*Empty, error)
+	DeleteMember(ctx context.Context, in *Delete, opts ...grpc.CallOption) (*Empty, error)
+	AddMember(ctx context.Context, in *MemberData, opts ...grpc.CallOption) (*Empty, error)
+	GetFamily(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*ResponseMemberDataArr, error)
+	HasFamily(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*HasFamilyResp, error)
 }
 
 type profileClient struct {
@@ -82,6 +90,78 @@ func (c *profileClient) GetAvatar(ctx context.Context, in *UserID, opts ...grpc.
 	return out, nil
 }
 
+func (c *profileClient) AcceptInvitationToFamily(ctx context.Context, in *AddToFamily, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/profile.Profile/AcceptInvitationToFamily", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *profileClient) CreateFamily(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/profile.Profile/CreateFamily", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *profileClient) DeleteFamily(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/profile.Profile/DeleteFamily", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *profileClient) DeleteFromFamily(ctx context.Context, in *Delete, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/profile.Profile/DeleteFromFamily", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *profileClient) DeleteMember(ctx context.Context, in *Delete, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/profile.Profile/DeleteMember", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *profileClient) AddMember(ctx context.Context, in *MemberData, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/profile.Profile/AddMember", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *profileClient) GetFamily(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*ResponseMemberDataArr, error) {
+	out := new(ResponseMemberDataArr)
+	err := c.cc.Invoke(ctx, "/profile.Profile/GetFamily", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *profileClient) HasFamily(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*HasFamilyResp, error) {
+	out := new(HasFamilyResp)
+	err := c.cc.Invoke(ctx, "/profile.Profile/HasFamily", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProfileServer is the server API for Profile service.
 // All implementations should embed UnimplementedProfileServer
 // for forward compatibility
@@ -91,6 +171,14 @@ type ProfileServer interface {
 	EditAvatar(context.Context, *EditAvatarData) (*Empty, error)
 	UploadAvatar(context.Context, *UploadInputFile) (*FileName, error)
 	GetAvatar(context.Context, *UserID) (*FileName, error)
+	AcceptInvitationToFamily(context.Context, *AddToFamily) (*Empty, error)
+	CreateFamily(context.Context, *UserID) (*Empty, error)
+	DeleteFamily(context.Context, *UserID) (*Empty, error)
+	DeleteFromFamily(context.Context, *Delete) (*Empty, error)
+	DeleteMember(context.Context, *Delete) (*Empty, error)
+	AddMember(context.Context, *MemberData) (*Empty, error)
+	GetFamily(context.Context, *UserID) (*ResponseMemberDataArr, error)
+	HasFamily(context.Context, *UserID) (*HasFamilyResp, error)
 }
 
 // UnimplementedProfileServer should be embedded to have forward compatible implementations.
@@ -111,6 +199,30 @@ func (UnimplementedProfileServer) UploadAvatar(context.Context, *UploadInputFile
 }
 func (UnimplementedProfileServer) GetAvatar(context.Context, *UserID) (*FileName, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAvatar not implemented")
+}
+func (UnimplementedProfileServer) AcceptInvitationToFamily(context.Context, *AddToFamily) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AcceptInvitationToFamily not implemented")
+}
+func (UnimplementedProfileServer) CreateFamily(context.Context, *UserID) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateFamily not implemented")
+}
+func (UnimplementedProfileServer) DeleteFamily(context.Context, *UserID) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteFamily not implemented")
+}
+func (UnimplementedProfileServer) DeleteFromFamily(context.Context, *Delete) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteFromFamily not implemented")
+}
+func (UnimplementedProfileServer) DeleteMember(context.Context, *Delete) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteMember not implemented")
+}
+func (UnimplementedProfileServer) AddMember(context.Context, *MemberData) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddMember not implemented")
+}
+func (UnimplementedProfileServer) GetFamily(context.Context, *UserID) (*ResponseMemberDataArr, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFamily not implemented")
+}
+func (UnimplementedProfileServer) HasFamily(context.Context, *UserID) (*HasFamilyResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HasFamily not implemented")
 }
 
 // UnsafeProfileServer may be embedded to opt out of forward compatibility for this service.
@@ -214,6 +326,150 @@ func _Profile_GetAvatar_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Profile_AcceptInvitationToFamily_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddToFamily)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).AcceptInvitationToFamily(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/AcceptInvitationToFamily",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).AcceptInvitationToFamily(ctx, req.(*AddToFamily))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Profile_CreateFamily_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).CreateFamily(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/CreateFamily",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).CreateFamily(ctx, req.(*UserID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Profile_DeleteFamily_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).DeleteFamily(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/DeleteFamily",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).DeleteFamily(ctx, req.(*UserID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Profile_DeleteFromFamily_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Delete)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).DeleteFromFamily(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/DeleteFromFamily",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).DeleteFromFamily(ctx, req.(*Delete))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Profile_DeleteMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Delete)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).DeleteMember(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/DeleteMember",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).DeleteMember(ctx, req.(*Delete))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Profile_AddMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MemberData)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).AddMember(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/AddMember",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).AddMember(ctx, req.(*MemberData))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Profile_GetFamily_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).GetFamily(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/GetFamily",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).GetFamily(ctx, req.(*UserID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Profile_HasFamily_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).HasFamily(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/HasFamily",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).HasFamily(ctx, req.(*UserID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Profile_ServiceDesc is the grpc.ServiceDesc for Profile service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -240,6 +496,38 @@ var Profile_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAvatar",
 			Handler:    _Profile_GetAvatar_Handler,
+		},
+		{
+			MethodName: "AcceptInvitationToFamily",
+			Handler:    _Profile_AcceptInvitationToFamily_Handler,
+		},
+		{
+			MethodName: "CreateFamily",
+			Handler:    _Profile_CreateFamily_Handler,
+		},
+		{
+			MethodName: "DeleteFamily",
+			Handler:    _Profile_DeleteFamily_Handler,
+		},
+		{
+			MethodName: "DeleteFromFamily",
+			Handler:    _Profile_DeleteFromFamily_Handler,
+		},
+		{
+			MethodName: "DeleteMember",
+			Handler:    _Profile_DeleteMember_Handler,
+		},
+		{
+			MethodName: "AddMember",
+			Handler:    _Profile_AddMember_Handler,
+		},
+		{
+			MethodName: "GetFamily",
+			Handler:    _Profile_GetFamily_Handler,
+		},
+		{
+			MethodName: "HasFamily",
+			Handler:    _Profile_HasFamily_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

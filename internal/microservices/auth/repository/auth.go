@@ -99,7 +99,7 @@ func (s Storage) CreateUser(data *proto.SignUpData) (*proto.Hash, error) {
 		return &proto.Hash{}, err
 	}
 
-	sqlScript := "INSERT INTO users(name, surname, email, password, salt, avatar, birthday, email_confirmed, id_family) VALUES($1, $2, $3, $4, $5, $6, TO_TIMESTAMP($7, 'YYYY-MM-DD'), FALSE, 0) RETURNING id"
+	sqlScript := "INSERT INTO users(name, surname, email, password, salt, avatar, birthday, email_confirmed, id_family, is_adult) VALUES($1, $2, $3, $4, $5, $6, TO_TIMESTAMP($7, 'YYYY-MM-DD'), FALSE, 0, TRUE) RETURNING id"
 
 	if err = s.db.QueryRow(sqlScript, data.Name, data.Surname, data.Email, hashPassword, salt, constants.DefaultImage, data.Date).Scan(&userID); err != nil {
 		return &proto.Hash{}, err

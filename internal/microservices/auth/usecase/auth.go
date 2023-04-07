@@ -51,7 +51,7 @@ func (s *Service) SignUp(ctx context.Context, data *proto.SignUpData) (*proto.Em
 	port := "587"
 
 	msg := "Подтвердите Email\r\n" +
-		"Что бы подтвердить Email, перейдите по ссылке: " +
+		"Чтобы подтвердить Email, перейдите по ссылке: " +
 		"http://" + os.Getenv("HOST") + "/confirm?hash=" + hash.Hash
 
 	body := []byte(msg)

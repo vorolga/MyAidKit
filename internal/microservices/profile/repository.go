@@ -14,10 +14,11 @@ type Storage interface {
 
 	HasFamily(userID int64) (bool, int64, int64, error)
 	CreateFamily(userID int64) error
-	AcceptInvitationToFamily(data *proto.AddToFamily) error
 	DeleteFamily(userID int64) error
-	ExitFromFamily(userID int64) error
+
+	AcceptInvitationToFamily(data *proto.AddToFamily) error
 	DeleteFromFamily(userID int64) error
+	DeleteMember(userID int64) error
 	AddMember(data *proto.MemberData) error
 	GetFamily(userID int64) ([]*proto.ResponseMemberData, error)
 }

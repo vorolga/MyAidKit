@@ -26,10 +26,11 @@ func NewStorage(db *sql.DB, minio *minio.Client, redis *redis.Pool) profile.Stor
 }
 
 func (s Storage) GetUserProfile(userID int64) (*proto.ProfileData, error) {
-	sqlScript := "SELECT name, surname, email, avatar, birthday FROM users WHERE id=$1"
+	sqlScript := "SELECT name, surname, email, avatar, birthday, is_adult FROM users WHERE id=$1"
 
 	var name, surname, email, avatar, birthday string
-	err := s.db.QueryRow(sqlScript, userID).Scan(&name, &surname, &email, &avatar, &birthday)
+	var isAdult bool
+	err := s.db.QueryRow(sqlScript, userID).Scan(&name, &surname, &email, &avatar, &birthday, &isAdult)
 
 	if err != nil {
 		return nil, err
@@ -60,6 +61,7 @@ func (s Storage) GetUserProfile(userID int64) (*proto.ProfileData, error) {
 		Avatar:  avatarUrl,
 		Date:    birthday[:10],
 		Main:    main,
+		Adult:   isAdult,
 	}, nil
 }
 
@@ -97,7 +99,7 @@ func (s Storage) EditProfile(data *proto.EditProfileData) error {
 		oldSurname = data.Surname
 	}
 
-	if data.Date != oldBirthday && data.Date != "0000/01/01" {
+	if data.Date != oldBirthday && data.Date != "" {
 		oldBirthday = data.Date
 	}
 
@@ -187,9 +189,9 @@ func (s Storage) DeleteFile(name string) error {
 }
 
 func (s Storage) AcceptInvitationToFamily(data *proto.AddToFamily) error {
-	sqlScript := "UPDATE users SET id_family = $2 WHERE email = $1"
+	sqlScript := "UPDATE users SET id_family = $2, is_adult = $3 WHERE email = $1"
 
-	_, err := s.db.Exec(sqlScript, data.Email, data.ID)
+	_, err := s.db.Exec(sqlScript, data.Email, data.ID, data.IsAdult)
 	if err != nil {
 		return err
 	}
@@ -200,7 +202,7 @@ func (s Storage) AcceptInvitationToFamily(data *proto.AddToFamily) error {
 func (s Storage) CreateFamily(userID int64) error {
 	var familyID int64
 
-	sqlScript := "INSERT INTO users(id_main_user) VALUES($1) RETURNING id"
+	sqlScript := "INSERT INTO family(id_main_user) VALUES($1) RETURNING id"
 
 	if err := s.db.QueryRow(sqlScript, userID).Scan(&familyID); err != nil {
 		return err
@@ -240,18 +242,29 @@ func (s Storage) HasFamily(userID int64) (bool, int64, int64, error) {
 }
 
 func (s Storage) DeleteFamily(userID int64) error {
-	sqlScript := "DELETE FROM users WHERE id = $1"
-	_, err := s.db.Exec(sqlScript, userID)
+	sqlScript := "SELECT id_family FROM users WHERE id=$1"
+
+	var idFamily int64
+	err := s.db.QueryRow(sqlScript, userID).Scan(&idFamily)
+
 	if err != nil {
 		return err
 	}
 
-	return nil
-}
+	sqlScript = "UPDATE users SET id_family = 0 WHERE id_family = $1"
+	_, err = s.db.Exec(sqlScript, idFamily)
+	if err != nil {
+		return err
+	}
 
-func (s Storage) ExitFromFamily(userID int64) error {
-	sqlScript := "UPDATE users SET id_family = 0 WHERE id = $1"
-	_, err := s.db.Exec(sqlScript, userID)
+	sqlScript = "DELETE FROM family WHERE id_main_user = $1"
+	_, err = s.db.Exec(sqlScript, userID)
+	if err != nil {
+		return err
+	}
+
+	sqlScript = "DELETE FROM members WHERE id_family = $1"
+	_, err = s.db.Exec(sqlScript, idFamily)
 	if err != nil {
 		return err
 	}
@@ -270,7 +283,7 @@ func (s Storage) DeleteFromFamily(userID int64) error {
 }
 
 func (s Storage) AddMember(data *proto.MemberData) error {
-	sqlScript := "INSERT INTO members(id_main_user, id_family, name, avatar, birthday) VALUES($1, $2, $3, $4, TO_TIMESTAMP($5, 'YYYY-MM-DD'), FALSE)"
+	sqlScript := "INSERT INTO members(id_main_user, id_family, name, avatar) VALUES($1, $2, $3, $4)"
 
 	if _, err := s.db.Exec(sqlScript, data.IDMainUser, data.IDFamily, data.Name, data.Avatar); err != nil {
 		return err
@@ -293,7 +306,7 @@ func (s Storage) GetFamily(userID int64) ([]*proto.ResponseMemberData, error) {
 	}
 
 	members := make([]*proto.ResponseMemberData, 0)
-	sqlScript = "SELECT id, name, avatar, birthday FROM users WHERE id_family = $1"
+	sqlScript = "SELECT id, name, avatar, is_adult FROM users WHERE id_family = $1"
 
 	rows, err := s.db.Query(sqlScript, idFamily)
 	if err != nil {
@@ -303,13 +316,14 @@ func (s Storage) GetFamily(userID int64) ([]*proto.ResponseMemberData, error) {
 
 	for rows.Next() {
 		var member proto.ResponseMemberData
-		if err = rows.Scan(&member.ID, &member.Name, &member.Avatar, &member.Date); err != nil {
+		member.IsUser = true
+		if err = rows.Scan(&member.ID, &member.Name, &member.Avatar, &member.IsAdult); err != nil {
 			return nil, err
 		}
 		members = append(members, &member)
 	}
 
-	sqlScript = "SELECT id, name, avatar, birthday FROM members WHERE id_family = $1"
+	sqlScript = "SELECT id, name, avatar FROM members WHERE id_family = $1"
 
 	rows, err = s.db.Query(sqlScript, idFamily)
 	if err != nil {
@@ -319,11 +333,23 @@ func (s Storage) GetFamily(userID int64) ([]*proto.ResponseMemberData, error) {
 
 	for rows.Next() {
 		var member proto.ResponseMemberData
-		if err = rows.Scan(&member.ID, &member.Name, &member.Avatar, &member.Date); err != nil {
+		member.IsAdult = false
+		member.IsUser = false
+		if err = rows.Scan(&member.ID, &member.Name, &member.Avatar); err != nil {
 			return nil, err
 		}
 		members = append(members, &member)
 	}
 
 	return members, nil
+}
+
+func (s Storage) DeleteMember(userID int64) error {
+	sqlScript := "DELETE FROM members WHERE id = $1"
+	_, err := s.db.Exec(sqlScript, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

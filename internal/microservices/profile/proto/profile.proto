@@ -13,6 +13,7 @@ message ProfileData {
   string Avatar = 4;
   string Date = 5;
   bool Main = 6;
+  bool Adult = 7;
 }
 
 message EditProfileData {
@@ -46,6 +47,7 @@ message UserID {
 message AddToFamily {
   int64 ID = 1;
   string Email = 2;
+  bool IsAdult = 3;
 }
 
 message MemberData {
@@ -53,14 +55,14 @@ message MemberData {
   int64 IDMainUser = 2;
   string Name = 3;
   string Avatar = 4;
-  string Date = 5;
 }
 
 message ResponseMemberData {
   int64 ID = 1;
   string Name = 2;
   string Avatar = 3;
-  string Date = 4;
+  bool IsAdult = 4;
+  bool IsUser = 5;
 }
 
 message ResponseMemberDataArr {
@@ -73,6 +75,11 @@ message HasFamilyResp {
   int64 IDFamily = 3;
 }
 
+message Delete {
+  UserID UserID = 1;
+  UserID UserToDelete = 2;
+}
+
 message Empty { }
 
 service Profile {
@@ -81,12 +88,12 @@ service Profile {
   rpc EditAvatar(EditAvatarData) returns(Empty) {}
   rpc UploadAvatar(UploadInputFile) returns(FileName) {}
   rpc GetAvatar(UserID) returns(FileName) {}
-//  rpc AcceptInvitationToFamily(AddToFamily) returns(Empty) {}
-//  rpc CreateFamily(UserID) returns(Empty) {}
-//  rpc DeleteFamily(UserID) returns(Empty) {}
-//  rpc ExitFromFamily(UserID) returns(Empty) {}
-//  rpc DeleteFromFamily(UserID) returns(Empty) {}
-//  rpc AddMember(MemberData) returns(Empty) {}
-//  rpc GetFamily(UserID) returns(ResponseMemberDataArr) {}
-//  rpc HasFamily(UserID) returns(HasFamilyResp) {}
+  rpc AcceptInvitationToFamily(AddToFamily) returns(Empty) {}
+  rpc CreateFamily(UserID) returns(Empty) {}
+  rpc DeleteFamily(UserID) returns(Empty) {}
+  rpc DeleteFromFamily(Delete) returns(Empty) {}
+  rpc DeleteMember(Delete) returns(Empty) {}
+  rpc AddMember(MemberData) returns(Empty) {}
+  rpc GetFamily(UserID) returns(ResponseMemberDataArr) {}
+  rpc HasFamily(UserID) returns(HasFamilyResp) {}
 }

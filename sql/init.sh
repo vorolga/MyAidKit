@@ -19,6 +19,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
           salt     varchar(50)  not null,
           avatar varchar(100),
           birthday timestamp,
+          is_adult bool,
           email_confirmed bool,
           id_family int
       );
@@ -34,8 +35,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
           id_main_user int,
           id_family int,
           name varchar(50)  not null,
-          avatar varchar(100),
-          birthday timestamp
+          avatar varchar(100)
       );
   COMMIT;
 

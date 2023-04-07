@@ -40,6 +40,13 @@ const (
 	EmailConfirmed         = "Email confirmed"
 	FileTypeIsNotSupported = "File type is not supported"
 	ProfileIsEdited        = "Profile is edited"
+	FamilyIsCreated        = "Family is created"
+	FamilyIsDeleted        = "Family is deleted"
+	UserIsDeleted          = "User is deleted"
+	MemberIsDeleted        = "Member is deleted"
+	MemberIsAdded          = "Member is added"
+	NotMainUser            = "Not main user"
+	InvitationIsSent       = "Invitation is sent"
 )
 
 const (
@@ -55,8 +62,8 @@ const (
 	InviteURL             = "/api/v1/invite"
 	CreateFamilyURL       = "/api/v1/create"
 	DeleteFamilyURL       = "/api/v1/delete"
-	ExitFamilyURL         = "/api/v1/exit"
-	RemoveUserUrl         = "/api/v1/remove"
+	RemoveMemberUrl       = "/api/v1/remove/member"
+	RemoveUserUrl         = "/api/v1/remove/user"
 	AddMembersToFamilyURL = "/api/v1/add"
 	GetFamilyURL          = "/api/v1/family"
 )

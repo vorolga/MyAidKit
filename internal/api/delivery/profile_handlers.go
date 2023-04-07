@@ -8,6 +8,9 @@ import (
 	"main/internal/models"
 	"mime/multipart"
 	"net/http"
+	"net/smtp"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/mailru/easyjson"
@@ -35,13 +38,13 @@ func (p *profileHandler) Register(router *echo.Echo) {
 	router.PUT(constants.AvatarURL, p.EditAvatar())
 	router.GET(constants.CsrfURL, p.GetCsrf())
 	//router.GET(constants.AcceptInvitationURL, p.AcceptInvitation())
-	//router.GET(constants.InviteURL, p.Invite())
-	//router.POST(constants.CreateFamilyURL, p.CreateFamily())
-	//router.DELETE(constants.DeleteFamilyURL, p.DeleteFamily())
-	//router.PUT(constants.ExitFamilyURL, p.ExitFamily())
-	//router.PUT(constants.RemoveUserUrl, p.RemoveUser())
-	//router.PUT(constants.AddMembersToFamilyURL, p.AddMember())
-	//router.GET(constants.GetFamilyURL, p.GetFamily())
+	router.POST(constants.InviteURL, p.Invite())
+	router.POST(constants.CreateFamilyURL, p.CreateFamily())
+	router.DELETE(constants.DeleteFamilyURL, p.DeleteFamily())
+	router.DELETE(constants.RemoveUserUrl, p.RemoveUser())
+	router.DELETE(constants.RemoveMemberUrl, p.RemoveMember())
+	router.POST(constants.AddMembersToFamilyURL, p.AddMember())
+	router.GET(constants.GetFamilyURL, p.GetFamily())
 }
 
 func (p *profileHandler) ParseError(ctx echo.Context, requestID string, err error) error {
@@ -148,6 +151,7 @@ func (p *profileHandler) GetUserProfile() echo.HandlerFunc {
 			Avatar:  userData.Avatar,
 			Date:    userData.Date,
 			Main:    userData.Main,
+			Adult:   userData.Adult,
 		}
 
 		sanitizer := bluemonday.UGCPolicy()
@@ -317,6 +321,273 @@ func (p *profileHandler) GetCsrf() echo.HandlerFunc {
 		resp, err := easyjson.Marshal(&models.Response{
 			Status:  http.StatusOK,
 			Message: token,
+		})
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, resp)
+	}
+}
+
+func (p *profileHandler) CreateFamily() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return err
+		}
+		data := &profile.UserID{ID: userID}
+		_, err = p.profileMicroservice.CreateFamily(context.Background(), data)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
+
+		p.logger.Info(
+			zap.String("ID", requestID),
+			zap.Int("ANSWER STATUS", http.StatusOK),
+		)
+
+		resp, err := easyjson.Marshal(&models.Response{
+			Status:  http.StatusOK,
+			Message: constants.FamilyIsCreated,
+		})
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, resp)
+	}
+}
+
+func (p *profileHandler) DeleteFamily() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return err
+		}
+		data := &profile.UserID{ID: userID}
+		_, err = p.profileMicroservice.DeleteFamily(context.Background(), data)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
+
+		p.logger.Info(
+			zap.String("ID", requestID),
+			zap.Int("ANSWER STATUS", http.StatusOK),
+		)
+
+		resp, err := easyjson.Marshal(&models.Response{
+			Status:  http.StatusOK,
+			Message: constants.FamilyIsDeleted,
+		})
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, resp)
+	}
+}
+
+func (p *profileHandler) RemoveUser() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return err
+		}
+		data := &profile.Delete{UserID: &profile.UserID{ID: userID}}
+
+		userData := models.UserIDDTO{}
+
+		if err = ctx.Bind(&userData); err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusBadRequest)
+		}
+
+		data.UserToDelete.ID = userData.ID
+		_, err = p.profileMicroservice.DeleteFromFamily(context.Background(), data)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
+
+		p.logger.Info(
+			zap.String("ID", requestID),
+			zap.Int("ANSWER STATUS", http.StatusOK),
+		)
+
+		resp, err := easyjson.Marshal(&models.Response{
+			Status:  http.StatusOK,
+			Message: constants.UserIsDeleted,
+		})
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, resp)
+	}
+}
+
+func (p *profileHandler) RemoveMember() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return err
+		}
+		data := &profile.Delete{UserID: &profile.UserID{ID: userID}}
+
+		userData := models.UserIDDTO{}
+
+		if err = ctx.Bind(&userData); err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusBadRequest)
+		}
+
+		data.UserToDelete.ID = userData.ID
+		_, err = p.profileMicroservice.DeleteMember(context.Background(), data)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
+
+		p.logger.Info(
+			zap.String("ID", requestID),
+			zap.Int("ANSWER STATUS", http.StatusOK),
+		)
+
+		resp, err := easyjson.Marshal(&models.Response{
+			Status:  http.StatusOK,
+			Message: constants.MemberIsDeleted,
+		})
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, resp)
+	}
+}
+
+func (p *profileHandler) AddMember() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return err
+		}
+		data := &profile.MemberData{
+			IDFamily:   0,
+			IDMainUser: userID,
+			Name:       "",
+			Avatar:     "",
+		}
+
+		userData := models.MemberDTO{}
+
+		if err = ctx.Bind(&userData); err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusBadRequest)
+		}
+
+		data.Name = userData.Name
+		data.Avatar = userData.Avatar
+		_, err = p.profileMicroservice.AddMember(context.Background(), data)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
+
+		p.logger.Info(
+			zap.String("ID", requestID),
+			zap.Int("ANSWER STATUS", http.StatusOK),
+		)
+
+		resp, err := easyjson.Marshal(&models.Response{
+			Status:  http.StatusOK,
+			Message: constants.MemberIsAdded,
+		})
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, resp)
+	}
+}
+
+func (p *profileHandler) GetFamily() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return err
+		}
+		data := &profile.UserID{
+			ID: userID,
+		}
+
+		family, err := p.profileMicroservice.GetFamily(context.Background(), data)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
+
+		var membersResult []models.Member
+		for _, member := range family.ResponseMemberData {
+			membersResult = append(membersResult, models.Member{
+				ID:     member.ID,
+				Name:   member.Name,
+				Avatar: member.Avatar,
+				Adult:  member.IsAdult,
+				User:   member.IsUser,
+			})
+		}
+
+		resp, err := easyjson.Marshal(&models.ResponseMembers{
+			Status:  0,
+			Members: membersResult,
+		})
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, resp)
+	}
+}
+
+func (p *profileHandler) Invite() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return err
+		}
+
+		userData := models.EmailUserDTO{}
+
+		if err = ctx.Bind(&userData); err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusBadRequest)
+		}
+
+		data := &profile.UserID{ID: userID}
+		hasFamilyResp, err := p.profileMicroservice.HasFamily(context.Background(), data)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
+
+		if hasFamilyResp.IDMainUser != userID {
+			resp, err := easyjson.Marshal(&models.Response{
+				Status:  0,
+				Message: constants.NotMainUser,
+			})
+			if err != nil {
+				return ctx.NoContent(http.StatusInternalServerError)
+			}
+			return ctx.JSONBlob(http.StatusOK, resp)
+		}
+
+		from := "vorrovvorrov@gmail.com"
+		password := os.Getenv("EMAILPASSWORD")
+
+		toList := []string{userData.Email}
+
+		host := "smtp.gmail.com"
+		port := "587"
+
+		msg := "Вам пришло приглашение в семью\r\n" +
+			"Чтобы принять, перейдите по ссылке: " + "http://" + os.Getenv("HOST") + "/accept?family=" + strconv.Itoa(int(hasFamilyResp.IDFamily))
+
+		body := []byte(msg)
+
+		authSMTP := smtp.PlainAuth("", from, password, host)
+		err = smtp.SendMail(host+":"+port, authSMTP, from, toList, body)
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+
+		resp, err := easyjson.Marshal(&models.Response{
+			Status:  0,
+			Message: constants.InvitationIsSent,
 		})
 		if err != nil {
 			return ctx.NoContent(http.StatusInternalServerError)
