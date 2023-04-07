@@ -80,6 +80,14 @@ message Delete {
   UserID UserToDelete = 2;
 }
 
+message EmailData {
+  string Email = 1;
+}
+
+message Exists {
+  bool Exists = 1;
+}
+
 message Empty { }
 
 service Profile {
@@ -96,4 +104,5 @@ service Profile {
   rpc AddMember(MemberData) returns(Empty) {}
   rpc GetFamily(UserID) returns(ResponseMemberDataArr) {}
   rpc HasFamily(UserID) returns(HasFamilyResp) {}
+  rpc UserExists(EmailData) returns(Exists) {}
 }

@@ -35,6 +35,7 @@ type ProfileClient interface {
 	AddMember(ctx context.Context, in *MemberData, opts ...grpc.CallOption) (*Empty, error)
 	GetFamily(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*ResponseMemberDataArr, error)
 	HasFamily(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*HasFamilyResp, error)
+	UserExists(ctx context.Context, in *EmailData, opts ...grpc.CallOption) (*Exists, error)
 }
 
 type profileClient struct {
@@ -162,6 +163,15 @@ func (c *profileClient) HasFamily(ctx context.Context, in *UserID, opts ...grpc.
 	return out, nil
 }
 
+func (c *profileClient) UserExists(ctx context.Context, in *EmailData, opts ...grpc.CallOption) (*Exists, error) {
+	out := new(Exists)
+	err := c.cc.Invoke(ctx, "/profile.Profile/UserExists", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProfileServer is the server API for Profile service.
 // All implementations should embed UnimplementedProfileServer
 // for forward compatibility
@@ -179,6 +189,7 @@ type ProfileServer interface {
 	AddMember(context.Context, *MemberData) (*Empty, error)
 	GetFamily(context.Context, *UserID) (*ResponseMemberDataArr, error)
 	HasFamily(context.Context, *UserID) (*HasFamilyResp, error)
+	UserExists(context.Context, *EmailData) (*Exists, error)
 }
 
 // UnimplementedProfileServer should be embedded to have forward compatible implementations.
@@ -223,6 +234,9 @@ func (UnimplementedProfileServer) GetFamily(context.Context, *UserID) (*Response
 }
 func (UnimplementedProfileServer) HasFamily(context.Context, *UserID) (*HasFamilyResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HasFamily not implemented")
+}
+func (UnimplementedProfileServer) UserExists(context.Context, *EmailData) (*Exists, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserExists not implemented")
 }
 
 // UnsafeProfileServer may be embedded to opt out of forward compatibility for this service.
@@ -470,6 +484,24 @@ func _Profile_HasFamily_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Profile_UserExists_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EmailData)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).UserExists(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/UserExists",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).UserExists(ctx, req.(*EmailData))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Profile_ServiceDesc is the grpc.ServiceDesc for Profile service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -528,6 +560,10 @@ var Profile_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "HasFamily",
 			Handler:    _Profile_HasFamily_Handler,
+		},
+		{
+			MethodName: "UserExists",
+			Handler:    _Profile_UserExists_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

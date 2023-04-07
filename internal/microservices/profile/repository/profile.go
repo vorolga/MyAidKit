@@ -369,3 +369,26 @@ func (s Storage) DeleteMember(userID int64) (string, error) {
 
 	return avatar, nil
 }
+
+func (s Storage) IsUserExists(data *proto.EmailData) (bool, error) {
+	sqlScript := "SELECT id FROM users WHERE email=$1"
+	rows, err := s.db.Query(sqlScript, data.Email)
+	if err != nil {
+		return false, err
+	}
+	err = rows.Err()
+	if err != nil {
+		return false, err
+	}
+	// убедимся, что всё закроется при выходе из программы
+	defer func() {
+		rows.Close()
+	}()
+
+	// Из базы пришел пустой запрос, значит пользователя в базе данных нет
+	if !rows.Next() {
+		return false, constants.ErrWrongData
+	}
+
+	return true, nil
+}

@@ -213,3 +213,13 @@ func (s *Service) HasFamily(ctx context.Context, userID *proto.UserID) (*proto.H
 		IDFamily:   family,
 	}, nil
 }
+
+func (s *Service) UserExists(ctx context.Context, data *proto.EmailData) (*proto.Exists, error) {
+	exists, err := s.storage.IsUserExists(data)
+	if err != nil {
+		return &proto.Exists{}, status.Error(codes.Internal, err.Error())
+	}
+	return &proto.Exists{
+		Exists: exists,
+	}, nil
+}

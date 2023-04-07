@@ -21,4 +21,6 @@ type Storage interface {
 	DeleteMember(userID int64) (string, error)
 	AddMember(data *proto.MemberData) error
 	GetFamily(userID int64) ([]*proto.ResponseMemberData, error)
+
+	IsUserExists(data *proto.EmailData) (bool, error)
 }

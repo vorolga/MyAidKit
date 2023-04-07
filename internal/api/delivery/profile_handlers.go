@@ -392,7 +392,7 @@ func (p *profileHandler) RemoveUser() echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		data := &profile.Delete{UserID: &profile.UserID{ID: userID}}
+		data := &profile.Delete{UserID: &profile.UserID{ID: userID}, UserToDelete: &profile.UserID{ID: 0}}
 
 		userData := models.UserIDDTO{}
 
@@ -614,13 +614,47 @@ func (p *profileHandler) Invite() echo.HandlerFunc {
 
 		if hasFamilyResp.IDMainUser != userID {
 			resp, err := easyjson.Marshal(&models.Response{
-				Status:  0,
+				Status:  200,
 				Message: constants.NotMainUser,
 			})
 			if err != nil {
 				return ctx.NoContent(http.StatusInternalServerError)
 			}
 			return ctx.JSONBlob(http.StatusOK, resp)
+		}
+
+		dataProfile := &profile.UserID{ID: userID}
+		profileData, err := p.profileMicroservice.GetUserProfile(context.Background(), dataProfile)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
+
+		if profileData.Email == userData.Email {
+			resp, err := easyjson.Marshal(&models.Response{
+				Status:  400,
+				Message: constants.ErrWrongData.Error(),
+			})
+			if err != nil {
+				return ctx.NoContent(http.StatusInternalServerError)
+			}
+			return ctx.JSONBlob(http.StatusBadRequest, resp)
+		}
+
+		email := &profile.EmailData{Email: userData.Email}
+		exists, err := p.profileMicroservice.UserExists(context.Background(), email)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
+
+		if exists.Exists == false {
+			resp, err := easyjson.Marshal(&models.Response{
+				Status:  400,
+				Message: constants.ErrWrongData.Error(),
+			})
+			if err != nil {
+				return ctx.NoContent(http.StatusInternalServerError)
+			}
+			return ctx.JSONBlob(http.StatusBadRequest, resp)
 		}
 
 		from := "vorrovvorrov@gmail.com"
@@ -645,7 +679,7 @@ func (p *profileHandler) Invite() echo.HandlerFunc {
 		}
 
 		resp, err := easyjson.Marshal(&models.Response{
-			Status:  0,
+			Status:  200,
 			Message: constants.InvitationIsSent,
 		})
 		if err != nil {
@@ -703,7 +737,7 @@ func (p *profileHandler) AcceptInvitation() echo.HandlerFunc {
 
 		resp, err := easyjson.Marshal(&models.Response{
 			Status:  http.StatusOK,
-			Message: constants.EmailConfirmed,
+			Message: constants.InvitationIsAccepted,
 		})
 		if err != nil {
 			return ctx.NoContent(http.StatusInternalServerError)
