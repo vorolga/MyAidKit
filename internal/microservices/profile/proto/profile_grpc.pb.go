@@ -39,6 +39,7 @@ type ProfileClient interface {
 	AddMedicine(ctx context.Context, in *AddMed, opts ...grpc.CallOption) (*Empty, error)
 	DeleteMedicine(ctx context.Context, in *DeleteMed, opts ...grpc.CallOption) (*Empty, error)
 	GetMedicine(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*MedicineArr, error)
+	EditMedicine(ctx context.Context, in *GetMedicineData, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type profileClient struct {
@@ -202,6 +203,15 @@ func (c *profileClient) GetMedicine(ctx context.Context, in *UserID, opts ...grp
 	return out, nil
 }
 
+func (c *profileClient) EditMedicine(ctx context.Context, in *GetMedicineData, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/profile.Profile/EditMedicine", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProfileServer is the server API for Profile service.
 // All implementations should embed UnimplementedProfileServer
 // for forward compatibility
@@ -223,6 +233,7 @@ type ProfileServer interface {
 	AddMedicine(context.Context, *AddMed) (*Empty, error)
 	DeleteMedicine(context.Context, *DeleteMed) (*Empty, error)
 	GetMedicine(context.Context, *UserID) (*MedicineArr, error)
+	EditMedicine(context.Context, *GetMedicineData) (*Empty, error)
 }
 
 // UnimplementedProfileServer should be embedded to have forward compatible implementations.
@@ -279,6 +290,9 @@ func (UnimplementedProfileServer) DeleteMedicine(context.Context, *DeleteMed) (*
 }
 func (UnimplementedProfileServer) GetMedicine(context.Context, *UserID) (*MedicineArr, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMedicine not implemented")
+}
+func (UnimplementedProfileServer) EditMedicine(context.Context, *GetMedicineData) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EditMedicine not implemented")
 }
 
 // UnsafeProfileServer may be embedded to opt out of forward compatibility for this service.
@@ -598,6 +612,24 @@ func _Profile_GetMedicine_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Profile_EditMedicine_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMedicineData)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).EditMedicine(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/EditMedicine",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).EditMedicine(ctx, req.(*GetMedicineData))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Profile_ServiceDesc is the grpc.ServiceDesc for Profile service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -672,6 +704,10 @@ var Profile_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetMedicine",
 			Handler:    _Profile_GetMedicine_Handler,
+		},
+		{
+			MethodName: "EditMedicine",
+			Handler:    _Profile_EditMedicine_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

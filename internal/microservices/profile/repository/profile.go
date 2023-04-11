@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"errors"
 	"main/internal/constants"
 	"main/internal/microservices/auth/utils/hash"
 	"main/internal/microservices/profile"
@@ -172,12 +173,12 @@ func (s Storage) UploadAvatar(data *proto.UploadInputFile) (string, error) {
 	return imageName, nil
 }
 
-func (s Storage) DeleteFile(name string) error {
+func (s Storage) DeleteFile(name string, bucket string) error {
 	opts := minio.RemoveObjectOptions{}
 
 	err := s.minio.RemoveObject(
 		context.Background(),
-		constants.UserObjectsBucketName,
+		bucket,
 		name,
 		opts,
 	)
@@ -403,18 +404,25 @@ func (s Storage) AddMedicine(data *proto.AddMed) error {
 	return nil
 }
 
-func (s Storage) DeleteMedicine(data *proto.DeleteMed) error {
-	sqlScript := "DELETE FROM medicine WHERE id=$1"
+func (s Storage) DeleteMedicine(data *proto.DeleteMed) (string, error) {
+	sqlScript := "SELECT image FROM medicine WHERE id=$1"
 
-	_, err := s.db.Exec(sqlScript, data.MedicineID)
+	var image string
+	err := s.db.QueryRow(sqlScript, data.MedicineID).Scan(&image)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	sqlScript = "DELETE FROM medicine WHERE id=$1"
+
+	_, err = s.db.Exec(sqlScript, data.MedicineID)
+	if err != nil {
+		return "", err
+	}
+	return image, nil
 }
 
-func (s Storage) GetMedicine(userID int64) ([]*proto.GetMedicine, error) {
-	medicines := make([]*proto.GetMedicine, 0)
+func (s Storage) GetMedicine(userID int64) ([]*proto.GetMedicineData, error) {
+	medicines := make([]*proto.GetMedicineData, 0)
 	sqlScript := "SELECT id, name, count, image, is_tablets FROM medicine WHERE id_user = $1"
 
 	rows, err := s.db.Query(sqlScript, userID)
@@ -424,7 +432,7 @@ func (s Storage) GetMedicine(userID int64) ([]*proto.GetMedicine, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var medicine proto.GetMedicine
+		var medicine proto.GetMedicineData
 		medicine.Medicine = &proto.Medicine{
 			Image:     "",
 			Name:      "",
@@ -440,7 +448,7 @@ func (s Storage) GetMedicine(userID int64) ([]*proto.GetMedicine, error) {
 	return medicines, nil
 }
 
-func (s Storage) GetMedicineFamily(familyID int64) ([]*proto.GetMedicine, error) {
+func (s Storage) GetMedicineFamily(familyID int64) ([]*proto.GetMedicineData, error) {
 	sqlScript := "SELECT medicine.id, medicine.name, medicine.count, medicine.image, medicine.is_tablets " +
 		"FROM medicine JOIN users u ON u.id_family = $1 AND medicine.id_user = u.id"
 
@@ -450,9 +458,9 @@ func (s Storage) GetMedicineFamily(familyID int64) ([]*proto.GetMedicine, error)
 	}
 	defer rows.Close()
 
-	medicines := make([]*proto.GetMedicine, 0)
+	medicines := make([]*proto.GetMedicineData, 0)
 	for rows.Next() {
-		var medicine proto.GetMedicine
+		var medicine proto.GetMedicineData
 		medicine.Medicine = &proto.Medicine{
 			Image:     "",
 			Name:      "",
@@ -470,4 +478,41 @@ func (s Storage) GetMedicineFamily(familyID int64) ([]*proto.GetMedicine, error)
 	}
 
 	return medicines, nil
+}
+
+func (s Storage) EditMedicine(data *proto.GetMedicineData) (string, error) {
+	sqlScript := "SELECT name, count, image, is_tablets FROM medicine WHERE id=$1"
+
+	var oldName, oldImage string
+	var oldCount int64
+	var oldIsTablets bool
+	err := s.db.QueryRow(sqlScript, data.ID).Scan(&oldName, &oldCount, &oldImage, &oldIsTablets)
+	if err != nil {
+		return "", err
+	}
+
+	image := oldImage
+
+	if data.Medicine.Name != oldName && len(data.Medicine.Name) != 0 {
+		oldName = data.Medicine.Name
+	}
+
+	if data.Medicine.Image != oldImage && len(data.Medicine.Image) != 0 && data.Medicine.Image != constants.DefaultMedicine {
+		oldImage = data.Medicine.Image
+	}
+
+	if data.Medicine.Count != oldCount && data.Medicine.Count != -1 {
+		if !oldIsTablets {
+			return "", errors.New("cant change count for not tablets")
+		}
+		oldCount = data.Medicine.Count
+	}
+
+	sqlScript = "UPDATE medicine SET name = $2, count = $3, image = $4 WHERE id = $1"
+
+	_, err = s.db.Exec(sqlScript, data.ID, oldName, oldCount, oldImage)
+	if err != nil {
+		return "", err
+	}
+	return image, nil
 }

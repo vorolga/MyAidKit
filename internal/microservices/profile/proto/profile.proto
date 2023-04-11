@@ -105,13 +105,13 @@ message AddMed {
   Medicine Medicine = 2;
 }
 
-message GetMedicine {
+message GetMedicineData {
   int64 ID = 1;
   Medicine Medicine = 2;
 }
 
 message MedicineArr {
-  repeated GetMedicine MedicineArr = 1;
+  repeated GetMedicineData MedicineArr = 1;
 }
 
 message Empty { }
@@ -134,4 +134,5 @@ service Profile {
   rpc AddMedicine(AddMed) returns(Empty) {}
   rpc DeleteMedicine(DeleteMed) returns(Empty) {}
   rpc GetMedicine(UserID) returns(MedicineArr) {}
+  rpc EditMedicine(GetMedicineData) returns(Empty) {}
 }

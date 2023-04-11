@@ -43,7 +43,7 @@ func (s *Service) EditAvatar(ctx context.Context, data *proto.EditAvatarData) (*
 	}
 
 	if oldAvatar != constants.DefaultImage {
-		err = s.storage.DeleteFile(oldAvatar)
+		err = s.storage.DeleteFile(oldAvatar, constants.UserObjectsBucketName)
 		if err != nil {
 			return &proto.Empty{}, status.Error(codes.Internal, err.Error())
 		}
@@ -193,7 +193,7 @@ func (s *Service) DeleteMember(ctx context.Context, Delete *proto.Delete) (*prot
 	}
 
 	if avatar != constants.DefaultImage {
-		err = s.storage.DeleteFile(avatar)
+		err = s.storage.DeleteFile(avatar, constants.UserObjectsBucketName)
 		if err != nil {
 			return &proto.Empty{}, status.Error(codes.Internal, err.Error())
 		}
@@ -233,10 +233,18 @@ func (s *Service) AddMedicine(ctx context.Context, data *proto.AddMed) (*proto.E
 }
 
 func (s *Service) DeleteMedicine(ctx context.Context, data *proto.DeleteMed) (*proto.Empty, error) {
-	err := s.storage.DeleteMedicine(data)
+	image, err := s.storage.DeleteMedicine(data)
 	if err != nil {
 		return &proto.Empty{}, status.Error(codes.Internal, err.Error())
 	}
+
+	if image != constants.DeleteMedicine {
+		err = s.storage.DeleteFile(image, constants.MedicinesObjectsBucketName)
+		if err != nil {
+			return &proto.Empty{}, status.Error(codes.Internal, err.Error())
+		}
+	}
+
 	return &proto.Empty{}, nil
 }
 
@@ -259,4 +267,20 @@ func (s *Service) GetMedicine(ctx context.Context, userID *proto.UserID) (*proto
 		return &proto.MedicineArr{}, status.Error(codes.Internal, err.Error())
 	}
 	return &proto.MedicineArr{MedicineArr: medicines}, nil
+}
+
+func (s *Service) EditMedicine(ctx context.Context, data *proto.GetMedicineData) (*proto.Empty, error) {
+	img, err := s.storage.EditMedicine(data)
+	if err != nil {
+		return &proto.Empty{}, status.Error(codes.Internal, err.Error())
+	}
+
+	if img != constants.DefaultMedicine {
+		err = s.storage.DeleteFile(img, constants.MedicinesObjectsBucketName)
+		if err != nil {
+			return &proto.Empty{}, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	return &proto.Empty{}, nil
 }

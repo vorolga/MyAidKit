@@ -10,7 +10,7 @@ type Storage interface {
 	EditAvatar(data *proto.EditAvatarData) (string, error)
 	GetAvatar(userID int64) (string, error)
 	UploadAvatar(data *proto.UploadInputFile) (string, error)
-	DeleteFile(string) error
+	DeleteFile(string, string) error
 
 	HasFamily(userID int64) (bool, int64, int64, error)
 	CreateFamily(userID int64) error
@@ -25,7 +25,8 @@ type Storage interface {
 	IsUserExists(data *proto.EmailData) (bool, error)
 
 	AddMedicine(data *proto.AddMed) error
-	DeleteMedicine(data *proto.DeleteMed) error
-	GetMedicine(userID int64) ([]*proto.GetMedicine, error)
-	GetMedicineFamily(familyID int64) ([]*proto.GetMedicine, error)
+	DeleteMedicine(data *proto.DeleteMed) (string, error)
+	GetMedicine(userID int64) ([]*proto.GetMedicineData, error)
+	GetMedicineFamily(familyID int64) ([]*proto.GetMedicineData, error)
+	EditMedicine(data *proto.GetMedicineData) (string, error)
 }

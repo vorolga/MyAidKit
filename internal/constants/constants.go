@@ -52,6 +52,7 @@ const (
 	NotMainUser                = "Not main user"
 	InvitationIsSent           = "Invitation is sent"
 	InvitationIsAccepted       = "Invitation is accepted"
+	MedicineIsEdited           = "Medicine is eddited"
 )
 
 const (
@@ -74,6 +75,7 @@ const (
 	DeleteMedicine        = "/api/v1/remove/medicine"
 	AddMedicineURL        = "/api/v1/add/medicine"
 	GetMedicineURL        = "/api/v1/medicine"
+	EditMedicineURL       = "/api/v1/edit/medicine"
 )
 
 var (

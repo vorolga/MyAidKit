@@ -48,6 +48,7 @@ func (p *profileHandler) Register(router *echo.Echo) {
 	router.DELETE(constants.DeleteMedicine, p.DeleteMedicine())
 	router.POST(constants.AddMedicineURL, p.AddMedicine())
 	router.GET(constants.GetMedicineURL, p.GetMedicine())
+	router.PUT(constants.EditMedicineURL, p.EditMedicine())
 }
 
 func (p *profileHandler) ParseError(ctx echo.Context, requestID string, err error) error {
@@ -916,6 +917,110 @@ func (p *profileHandler) GetMedicine() echo.HandlerFunc {
 		resp, err := easyjson.Marshal(&models.ResponseMedicine{
 			Status:   200,
 			Medicine: medicineResult,
+		})
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, resp)
+	}
+}
+
+func (p *profileHandler) EditMedicine() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+
+		fileName := constants.DefaultMedicine
+		file, err := ctx.FormFile("file")
+		if err == nil {
+			src, err := file.Open()
+			if err != nil {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+
+			buffer := make([]byte, file.Size)
+			_, err = src.Read(buffer)
+			if err != nil {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+			err = src.Close()
+			if err != nil {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+
+			file, err = ctx.FormFile("file")
+			if err != nil {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+			src, err = file.Open()
+			defer func(src multipart.File) {
+				err = src.Close()
+				if err != nil {
+					return
+				}
+			}(src)
+			if err != nil {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+
+			fileType := http.DetectContentType(buffer)
+
+			// Validate File Type
+			if _, ex := constants.ImageTypes[fileType]; !ex {
+				return constants.RespError(ctx, p.logger, requestID, constants.FileTypeIsNotSupported, http.StatusBadRequest)
+			}
+
+			uploadData := &profile.UploadInputFile{
+				ID:          userID,
+				File:        buffer,
+				Size:        file.Size,
+				ContentType: fileType,
+				BucketName:  constants.MedicinesObjectsBucketName,
+			}
+
+			name, err := p.profileMicroservice.UploadAvatar(context.Background(), uploadData)
+			if err != nil {
+				return p.ParseError(ctx, requestID, err)
+			}
+
+			fileName = name.Name
+		} else {
+			if err.Error() != "http: no such file" {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+		}
+
+		data := &profile.GetMedicineData{
+			ID: 0,
+			Medicine: &profile.Medicine{
+				Image:     fileName,
+				Name:      "",
+				IsTablets: false,
+				Count:     0,
+			},
+		}
+
+		medicineData := models.Medicine{}
+
+		if err = ctx.Bind(&medicineData); err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusBadRequest)
+		}
+
+		data.ID = medicineData.ID
+		data.Medicine.Name = medicineData.Name
+		data.Medicine.Count = medicineData.Count
+		_, err = p.profileMicroservice.EditMedicine(context.Background(), data)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
+
+		p.logger.Info(
+			zap.String("ID", requestID),
+			zap.Int("ANSWER STATUS", http.StatusOK),
+		)
+
+		resp, err := easyjson.Marshal(&models.Response{
+			Status:  http.StatusOK,
+			Message: constants.MedicineIsEdited,
 		})
 		if err != nil {
 			return ctx.NoContent(http.StatusInternalServerError)
