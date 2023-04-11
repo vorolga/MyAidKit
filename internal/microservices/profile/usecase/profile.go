@@ -238,7 +238,7 @@ func (s *Service) DeleteMedicine(ctx context.Context, data *proto.DeleteMed) (*p
 		return &proto.Empty{}, status.Error(codes.Internal, err.Error())
 	}
 
-	if image != constants.DeleteMedicine {
+	if image != constants.DefaultMedicine {
 		err = s.storage.DeleteFile(image, constants.MedicinesObjectsBucketName)
 		if err != nil {
 			return &proto.Empty{}, status.Error(codes.Internal, err.Error())
