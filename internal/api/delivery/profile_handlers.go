@@ -907,6 +907,7 @@ func (p *profileHandler) GetMedicine() echo.HandlerFunc {
 			medicineResult = append(medicineResult, models.Medicine{
 				ID:        medicine.ID,
 				Name:      medicine.Medicine.Name,
+				Image:     medicine.Medicine.Image,
 				IsTablets: medicine.Medicine.IsTablets,
 				Count:     medicine.Medicine.Count,
 			})

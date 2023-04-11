@@ -496,6 +496,8 @@ func easyjson6ff3ac1dDecodeMainInternalModels5(in *jlexer.Lexer, out *Medicine) 
 			out.ID = int64(in.Int64())
 		case "name":
 			out.Name = string(in.String())
+		case "image":
+			out.Image = string(in.String())
 		case "is_tablets":
 			out.IsTablets = bool(in.Bool())
 		case "count":
@@ -523,6 +525,11 @@ func easyjson6ff3ac1dEncodeMainInternalModels5(out *jwriter.Writer, in Medicine)
 		const prefix string = ",\"name\":"
 		out.RawString(prefix)
 		out.String(string(in.Name))
+	}
+	{
+		const prefix string = ",\"image\":"
+		out.RawString(prefix)
+		out.String(string(in.Image))
 	}
 	{
 		const prefix string = ",\"is_tablets\":"

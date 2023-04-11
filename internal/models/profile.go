@@ -56,6 +56,7 @@ type AddMedicineDTO struct {
 type Medicine struct {
 	ID        int64  `json:"id" form:"id"`
 	Name      string `json:"name" form:"name"`
+	Image     string `json:"image" form:"image"`
 	IsTablets bool   `json:"is_tablets" form:"is_tablets"`
 	Count     int64  `json:"count" form:"count"`
 }
