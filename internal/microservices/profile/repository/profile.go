@@ -442,6 +442,10 @@ func (s Storage) GetMedicine(userID int64) ([]*proto.GetMedicineData, error) {
 		if err = rows.Scan(&medicine.ID, &medicine.Medicine.Name, &medicine.Medicine.Count, &medicine.Medicine.Image, &medicine.Medicine.IsTablets); err != nil {
 			return nil, err
 		}
+		medicine.Medicine.Image, err = images.GenerateFileURL(medicine.Medicine.Image, constants.MedicinesObjectsBucketName)
+		if err != nil {
+			return nil, err
+		}
 		medicines = append(medicines, &medicine)
 	}
 
