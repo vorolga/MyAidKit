@@ -30,24 +30,28 @@ var (
 )
 
 const (
-	DefaultImage           = "default_avatar.webp"
-	UserObjectsBucketName  = "avatars"
-	SessionRequired        = "Session required"
-	UserIsUnauthorized     = "User is unauthorized"
-	NoRequestID            = "No RequestID in context"
-	UserIsLoggedOut        = "User is logged out"
-	UserCanBeLoggedIn      = "User can be logged in"
-	EmailConfirmed         = "Email confirmed"
-	FileTypeIsNotSupported = "File type is not supported"
-	ProfileIsEdited        = "Profile is edited"
-	FamilyIsCreated        = "Family is created"
-	FamilyIsDeleted        = "Family is deleted"
-	UserIsDeleted          = "User is deleted"
-	MemberIsDeleted        = "Member is deleted"
-	MemberIsAdded          = "Member is added"
-	NotMainUser            = "Not main user"
-	InvitationIsSent       = "Invitation is sent"
-	InvitationIsAccepted   = "Invitation is accepted"
+	DefaultImage               = "default_avatar.webp"
+	DefaultMedicine            = "default_medicine.webp"
+	UserObjectsBucketName      = "avatars"
+	MedicinesObjectsBucketName = "medicines"
+	SessionRequired            = "Session required"
+	UserIsUnauthorized         = "User is unauthorized"
+	NoRequestID                = "No RequestID in context"
+	UserIsLoggedOut            = "User is logged out"
+	UserCanBeLoggedIn          = "User can be logged in"
+	EmailConfirmed             = "Email confirmed"
+	FileTypeIsNotSupported     = "File type is not supported"
+	ProfileIsEdited            = "Profile is edited"
+	FamilyIsCreated            = "Family is created"
+	FamilyIsDeleted            = "Family is deleted"
+	UserIsDeleted              = "User is deleted"
+	MemberIsDeleted            = "Member is deleted"
+	MedicineIsDeleted          = "Medicine is deleted"
+	MemberIsAdded              = "Member is added"
+	MedicineIsAdded            = "Medicine is added"
+	NotMainUser                = "Not main user"
+	InvitationIsSent           = "Invitation is sent"
+	InvitationIsAccepted       = "Invitation is accepted"
 )
 
 const (
@@ -67,6 +71,9 @@ const (
 	RemoveUserUrl         = "/api/v1/remove/user"
 	AddMembersToFamilyURL = "/api/v1/add"
 	GetFamilyURL          = "/api/v1/family"
+	DeleteMedicine        = "/api/v1/remove/medicine"
+	AddMedicineURL        = "/api/v1/add/medicine"
+	GetMedicineURL        = "/api/v1/medicine"
 )
 
 var (

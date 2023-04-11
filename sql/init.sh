@@ -51,9 +51,11 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       create table if not exists medicine
       (
           id serial constraint medicine_pk primary key,
+          id_user int,
           name varchar(100)  not null,
           count int,
-          id_type int
+          image varchar(100),
+          is_tablets bool
       );
   COMMIT;
 

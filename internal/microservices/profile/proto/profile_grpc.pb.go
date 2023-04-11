@@ -36,6 +36,9 @@ type ProfileClient interface {
 	GetFamily(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*ResponseMemberDataArr, error)
 	HasFamily(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*HasFamilyResp, error)
 	UserExists(ctx context.Context, in *EmailData, opts ...grpc.CallOption) (*Exists, error)
+	AddMedicine(ctx context.Context, in *AddMed, opts ...grpc.CallOption) (*Empty, error)
+	DeleteMedicine(ctx context.Context, in *DeleteMed, opts ...grpc.CallOption) (*Empty, error)
+	GetMedicine(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*MedicineArr, error)
 }
 
 type profileClient struct {
@@ -172,6 +175,33 @@ func (c *profileClient) UserExists(ctx context.Context, in *EmailData, opts ...g
 	return out, nil
 }
 
+func (c *profileClient) AddMedicine(ctx context.Context, in *AddMed, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/profile.Profile/AddMedicine", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *profileClient) DeleteMedicine(ctx context.Context, in *DeleteMed, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/profile.Profile/DeleteMedicine", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *profileClient) GetMedicine(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*MedicineArr, error) {
+	out := new(MedicineArr)
+	err := c.cc.Invoke(ctx, "/profile.Profile/GetMedicine", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProfileServer is the server API for Profile service.
 // All implementations should embed UnimplementedProfileServer
 // for forward compatibility
@@ -190,6 +220,9 @@ type ProfileServer interface {
 	GetFamily(context.Context, *UserID) (*ResponseMemberDataArr, error)
 	HasFamily(context.Context, *UserID) (*HasFamilyResp, error)
 	UserExists(context.Context, *EmailData) (*Exists, error)
+	AddMedicine(context.Context, *AddMed) (*Empty, error)
+	DeleteMedicine(context.Context, *DeleteMed) (*Empty, error)
+	GetMedicine(context.Context, *UserID) (*MedicineArr, error)
 }
 
 // UnimplementedProfileServer should be embedded to have forward compatible implementations.
@@ -237,6 +270,15 @@ func (UnimplementedProfileServer) HasFamily(context.Context, *UserID) (*HasFamil
 }
 func (UnimplementedProfileServer) UserExists(context.Context, *EmailData) (*Exists, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserExists not implemented")
+}
+func (UnimplementedProfileServer) AddMedicine(context.Context, *AddMed) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddMedicine not implemented")
+}
+func (UnimplementedProfileServer) DeleteMedicine(context.Context, *DeleteMed) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteMedicine not implemented")
+}
+func (UnimplementedProfileServer) GetMedicine(context.Context, *UserID) (*MedicineArr, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMedicine not implemented")
 }
 
 // UnsafeProfileServer may be embedded to opt out of forward compatibility for this service.
@@ -502,6 +544,60 @@ func _Profile_UserExists_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Profile_AddMedicine_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddMed)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).AddMedicine(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/AddMedicine",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).AddMedicine(ctx, req.(*AddMed))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Profile_DeleteMedicine_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteMed)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).DeleteMedicine(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/DeleteMedicine",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).DeleteMedicine(ctx, req.(*DeleteMed))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Profile_GetMedicine_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).GetMedicine(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/GetMedicine",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).GetMedicine(ctx, req.(*UserID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Profile_ServiceDesc is the grpc.ServiceDesc for Profile service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -564,6 +660,18 @@ var Profile_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UserExists",
 			Handler:    _Profile_UserExists_Handler,
+		},
+		{
+			MethodName: "AddMedicine",
+			Handler:    _Profile_AddMedicine_Handler,
+		},
+		{
+			MethodName: "DeleteMedicine",
+			Handler:    _Profile_DeleteMedicine_Handler,
+		},
+		{
+			MethodName: "GetMedicine",
+			Handler:    _Profile_GetMedicine_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

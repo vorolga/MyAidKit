@@ -45,6 +45,9 @@ func (p *profileHandler) Register(router *echo.Echo) {
 	router.DELETE(constants.RemoveMemberUrl, p.RemoveMember())
 	router.POST(constants.AddMembersToFamilyURL, p.AddMember())
 	router.GET(constants.GetFamilyURL, p.GetFamily())
+	router.DELETE(constants.DeleteMedicine, p.DeleteMedicine())
+	router.POST(constants.AddMedicineURL, p.AddMedicine())
+	router.GET(constants.GetMedicineURL, p.GetMedicine())
 }
 
 func (p *profileHandler) ParseError(ctx echo.Context, requestID string, err error) error {
@@ -130,7 +133,7 @@ func (p *profileHandler) GetUserProfile() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
 		if err != nil {
-			return err
+			return p.ParseError(ctx, requestID, err)
 		}
 		data := &profile.UserID{ID: userID}
 		userData, err := p.profileMicroservice.GetUserProfile(context.Background(), data)
@@ -223,6 +226,7 @@ func (p *profileHandler) EditAvatar() echo.HandlerFunc {
 			File:        buffer,
 			Size:        file.Size,
 			ContentType: fileType,
+			BucketName:  constants.UserObjectsBucketName,
 		}
 
 		fileName, err := p.profileMicroservice.UploadAvatar(context.Background(), uploadData)
@@ -507,6 +511,7 @@ func (p *profileHandler) AddMember() echo.HandlerFunc {
 				File:        buffer,
 				Size:        file.Size,
 				ContentType: fileType,
+				BucketName:  constants.UserObjectsBucketName,
 			}
 
 			name, err := p.profileMicroservice.UploadAvatar(context.Background(), uploadData)
@@ -738,6 +743,178 @@ func (p *profileHandler) AcceptInvitation() echo.HandlerFunc {
 		resp, err := easyjson.Marshal(&models.Response{
 			Status:  http.StatusOK,
 			Message: constants.InvitationIsAccepted,
+		})
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, resp)
+	}
+}
+
+func (p *profileHandler) AddMedicine() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+
+		fileName := constants.DefaultMedicine
+		file, err := ctx.FormFile("file")
+		if err == nil {
+			src, err := file.Open()
+			if err != nil {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+
+			buffer := make([]byte, file.Size)
+			_, err = src.Read(buffer)
+			if err != nil {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+			err = src.Close()
+			if err != nil {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+
+			file, err = ctx.FormFile("file")
+			if err != nil {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+			src, err = file.Open()
+			defer func(src multipart.File) {
+				err = src.Close()
+				if err != nil {
+					return
+				}
+			}(src)
+			if err != nil {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+
+			fileType := http.DetectContentType(buffer)
+
+			// Validate File Type
+			if _, ex := constants.ImageTypes[fileType]; !ex {
+				return constants.RespError(ctx, p.logger, requestID, constants.FileTypeIsNotSupported, http.StatusBadRequest)
+			}
+
+			uploadData := &profile.UploadInputFile{
+				ID:          userID,
+				File:        buffer,
+				Size:        file.Size,
+				ContentType: fileType,
+				BucketName:  constants.MedicinesObjectsBucketName,
+			}
+
+			name, err := p.profileMicroservice.UploadAvatar(context.Background(), uploadData)
+			if err != nil {
+				return p.ParseError(ctx, requestID, err)
+			}
+
+			fileName = name.Name
+		} else {
+			if err.Error() != "http: no such file" {
+				return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+			}
+		}
+
+		medicineData := models.AddMedicineDTO{}
+
+		if err = ctx.Bind(&medicineData); err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusBadRequest)
+		}
+
+		data := &profile.AddMed{
+			UserID: userID,
+			Medicine: &profile.Medicine{
+				Image:     fileName,
+				Name:      medicineData.Name,
+				IsTablets: medicineData.IsTablets,
+				Count:     medicineData.Count,
+			},
+		}
+
+		_, err = p.profileMicroservice.AddMedicine(context.Background(), data)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
+
+		p.logger.Info(
+			zap.String("ID", requestID),
+			zap.Int("ANSWER STATUS", http.StatusOK),
+		)
+
+		resp, err := easyjson.Marshal(&models.Response{
+			Status:  http.StatusOK,
+			Message: constants.MedicineIsAdded,
+		})
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, resp)
+	}
+}
+
+func (p *profileHandler) DeleteMedicine() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		_, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return err
+		}
+
+		dataMedicine := models.MedecineIDDTO{}
+
+		if err = ctx.Bind(&dataMedicine); err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusBadRequest)
+		}
+
+		data := &profile.DeleteMed{MedicineID: dataMedicine.ID}
+		_, err = p.profileMicroservice.DeleteMedicine(context.Background(), data)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
+
+		p.logger.Info(
+			zap.String("ID", requestID),
+			zap.Int("ANSWER STATUS", http.StatusOK),
+		)
+
+		resp, err := easyjson.Marshal(&models.Response{
+			Status:  http.StatusOK,
+			Message: constants.MedicineIsDeleted,
+		})
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, resp)
+	}
+}
+
+func (p *profileHandler) GetMedicine() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return err
+		}
+
+		data := &profile.UserID{
+			ID: userID,
+		}
+		medicines, err := p.profileMicroservice.GetMedicine(context.Background(), data)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
+
+		medicineResult := make([]models.Medicine, 0)
+		for _, medicine := range medicines.MedicineArr {
+			medicineResult = append(medicineResult, models.Medicine{
+				ID:        medicine.ID,
+				Name:      medicine.Medicine.Name,
+				IsTablets: medicine.Medicine.IsTablets,
+				Count:     medicine.Medicine.Count,
+			})
+		}
+
+		resp, err := easyjson.Marshal(&models.ResponseMedicine{
+			Status:   200,
+			Medicine: medicineResult,
 		})
 		if err != nil {
 			return ctx.NoContent(http.StatusInternalServerError)

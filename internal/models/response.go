@@ -14,3 +14,8 @@ type ResponseMembers struct {
 	Status  int      `json:"status"`
 	Members []Member `json:"members"`
 }
+
+type ResponseMedicine struct {
+	Status   int        `json:"status"`
+	Medicine []Medicine `json:"members"`
+}

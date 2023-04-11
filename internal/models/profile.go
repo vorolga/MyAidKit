@@ -30,6 +30,10 @@ type MemberDTO struct {
 	Name string `json:"name" form:"name"`
 }
 
+type MedecineIDDTO struct {
+	ID int64 `json:"id" form:"id"`
+}
+
 type Member struct {
 	ID     int64  `json:"id" form:"id"`
 	Name   string `json:"name" form:"name"`
@@ -41,4 +45,17 @@ type Member struct {
 type InviteUserDTO struct {
 	Email string `json:"email" form:"email"`
 	Adult bool   `json:"adult" form:"adult"`
+}
+
+type AddMedicineDTO struct {
+	Name      string `json:"name" form:"name"`
+	IsTablets bool   `json:"is_tablets" form:"is_tablets"`
+	Count     int64  `json:"count" form:"count"`
+}
+
+type Medicine struct {
+	ID        int64  `json:"id" form:"id"`
+	Name      string `json:"name" form:"name"`
+	IsTablets bool   `json:"is_tablets" form:"is_tablets"`
+	Count     int64  `json:"count" form:"count"`
 }

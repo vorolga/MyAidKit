@@ -223,3 +223,40 @@ func (s *Service) UserExists(ctx context.Context, data *proto.EmailData) (*proto
 		Exists: exists,
 	}, nil
 }
+
+func (s *Service) AddMedicine(ctx context.Context, data *proto.AddMed) (*proto.Empty, error) {
+	err := s.storage.AddMedicine(data)
+	if err != nil {
+		return &proto.Empty{}, status.Error(codes.Internal, err.Error())
+	}
+	return &proto.Empty{}, nil
+}
+
+func (s *Service) DeleteMedicine(ctx context.Context, data *proto.DeleteMed) (*proto.Empty, error) {
+	err := s.storage.DeleteMedicine(data)
+	if err != nil {
+		return &proto.Empty{}, status.Error(codes.Internal, err.Error())
+	}
+	return &proto.Empty{}, nil
+}
+
+func (s *Service) GetMedicine(ctx context.Context, userID *proto.UserID) (*proto.MedicineArr, error) {
+	has, _, family, err := s.storage.HasFamily(userID.ID)
+	if err != nil {
+		return &proto.MedicineArr{}, status.Error(codes.Internal, err.Error())
+	}
+
+	if !has {
+		medicines, err := s.storage.GetMedicine(userID.ID)
+		if err != nil {
+			return &proto.MedicineArr{}, status.Error(codes.Internal, err.Error())
+		}
+		return &proto.MedicineArr{MedicineArr: medicines}, nil
+	}
+
+	medicines, err := s.storage.GetMedicineFamily(family)
+	if err != nil {
+		return &proto.MedicineArr{}, status.Error(codes.Internal, err.Error())
+	}
+	return &proto.MedicineArr{MedicineArr: medicines}, nil
+}

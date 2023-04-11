@@ -26,6 +26,7 @@ WORKDIR /app
 COPY --from=build /build/profile .
 COPY --from=build /build/.env .
 COPY --from=build /build/default_avatar.webp .
+COPY --from=build /build/default_medicine.webp .
 
 RUN chmod +x ./profile
 

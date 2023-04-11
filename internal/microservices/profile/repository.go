@@ -23,4 +23,9 @@ type Storage interface {
 	GetFamily(userID int64) ([]*proto.ResponseMemberData, error)
 
 	IsUserExists(data *proto.EmailData) (bool, error)
+
+	AddMedicine(data *proto.AddMed) error
+	DeleteMedicine(data *proto.DeleteMed) error
+	GetMedicine(userID int64) ([]*proto.GetMedicine, error)
+	GetMedicineFamily(familyID int64) ([]*proto.GetMedicine, error)
 }

@@ -159,7 +159,7 @@ func (s Storage) UploadAvatar(data *proto.UploadInputFile) (string, error) {
 
 	_, err := s.minio.PutObject(
 		context.Background(),
-		constants.UserObjectsBucketName, // Константа с именем бакета
+		data.BucketName, // Константа с именем бакета
 		imageName,
 		bytes.NewReader(data.File),
 		data.Size,
@@ -391,4 +391,79 @@ func (s Storage) IsUserExists(data *proto.EmailData) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (s Storage) AddMedicine(data *proto.AddMed) error {
+	sqlScript := "INSERT INTO medicine(id_user, name, count, image, is_tablets) VALUES($1, $2, $3, $4, $5)"
+
+	if _, err := s.db.Exec(sqlScript, data.UserID, data.Medicine.Name, data.Medicine.Count, data.Medicine.Image, data.Medicine.IsTablets); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s Storage) DeleteMedicine(data *proto.DeleteMed) error {
+	sqlScript := "DELETE FROM medicine WHERE id=$1"
+
+	_, err := s.db.Exec(sqlScript, data.MedicineID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s Storage) GetMedicine(userID int64) ([]*proto.GetMedicine, error) {
+	medicines := make([]*proto.GetMedicine, 0)
+	sqlScript := "SELECT id, name, count, image, is_tablets FROM medicine WHERE id_user = $1"
+
+	rows, err := s.db.Query(sqlScript, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var medicine proto.GetMedicine
+		medicine.Medicine = &proto.Medicine{
+			Image:     "",
+			Name:      "",
+			IsTablets: false,
+			Count:     0,
+		}
+		if err = rows.Scan(&medicine.ID, &medicine.Medicine.Name, &medicine.Medicine.Count, &medicine.Medicine.Image, &medicine.Medicine.IsTablets); err != nil {
+			return nil, err
+		}
+		medicines = append(medicines, &medicine)
+	}
+
+	return medicines, nil
+}
+
+func (s Storage) GetMedicineFamily(familyID int64) ([]*proto.GetMedicine, error) {
+	sqlScript := "SELECT medicine.id, medicine.name, medicine.count, medicine.image, medicine.is_tablets " +
+		"FROM medicine JOIN users u ON u.id_family = $1 AND medicine.id_user = u.id"
+
+	rows, err := s.db.Query(sqlScript, familyID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	medicines := make([]*proto.GetMedicine, 0)
+	for rows.Next() {
+		var medicine proto.GetMedicine
+		medicine.Medicine = &proto.Medicine{
+			Image:     "",
+			Name:      "",
+			IsTablets: false,
+			Count:     0,
+		}
+		if err = rows.Scan(&medicine.ID, &medicine.Medicine.Name, &medicine.Medicine.Count, &medicine.Medicine.Image, &medicine.Medicine.IsTablets); err != nil {
+			return nil, err
+		}
+		medicines = append(medicines, &medicine)
+	}
+
+	return medicines, nil
 }

@@ -34,6 +34,7 @@ message UploadInputFile {
   bytes File = 2;
   int64 Size = 3;
   string ContentType = 4;
+  string BucketName = 5;
 }
 
 message FileName {
@@ -88,6 +89,31 @@ message Exists {
   bool Exists = 1;
 }
 
+message Medicine {
+  string Image = 1;
+  string Name = 2;
+  bool IsTablets = 3;
+  int64 Count = 4;
+}
+
+message DeleteMed {
+  int64 MedicineID = 1;
+}
+
+message AddMed {
+  int64 UserID = 1;
+  Medicine Medicine = 2;
+}
+
+message GetMedicine {
+  int64 ID = 1;
+  Medicine Medicine = 2;
+}
+
+message MedicineArr {
+  repeated GetMedicine MedicineArr = 1;
+}
+
 message Empty { }
 
 service Profile {
@@ -105,4 +131,7 @@ service Profile {
   rpc GetFamily(UserID) returns(ResponseMemberDataArr) {}
   rpc HasFamily(UserID) returns(HasFamilyResp) {}
   rpc UserExists(EmailData) returns(Exists) {}
+  rpc AddMedicine(AddMed) returns(Empty) {}
+  rpc DeleteMedicine(DeleteMed) returns(Empty) {}
+  rpc GetMedicine(UserID) returns(MedicineArr) {}
 }
