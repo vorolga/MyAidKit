@@ -76,6 +76,8 @@ const (
 	AddMedicineURL        = "/api/v1/add/medicine"
 	GetMedicineURL        = "/api/v1/medicine"
 	EditMedicineURL       = "/api/v1/edit/medicine"
+	BarcodeURL            = "/api/v1/barcode"
+	SearchURL             = "/api/v1/search"
 )
 
 var (

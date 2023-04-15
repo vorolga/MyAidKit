@@ -1,7 +1,11 @@
 package delivery
 
 import (
+	"bufio"
 	"context"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
 	"main/internal/constants"
 	"main/internal/csrf"
 	profile "main/internal/microservices/profile/proto"
@@ -14,6 +18,8 @@ import (
 	"time"
 
 	"github.com/mailru/easyjson"
+	"github.com/makiuchi-d/gozxing"
+	"github.com/makiuchi-d/gozxing/oned"
 
 	"github.com/labstack/echo/v4"
 	"github.com/microcosm-cc/bluemonday"
@@ -49,6 +55,7 @@ func (p *profileHandler) Register(router *echo.Echo) {
 	router.POST(constants.AddMedicineURL, p.AddMedicine())
 	router.GET(constants.GetMedicineURL, p.GetMedicine())
 	router.PUT(constants.EditMedicineURL, p.EditMedicine())
+	router.POST(constants.BarcodeURL, p.Barcode())
 }
 
 func (p *profileHandler) ParseError(ctx echo.Context, requestID string, err error) error {
@@ -1026,5 +1033,110 @@ func (p *profileHandler) EditMedicine() echo.HandlerFunc {
 			return ctx.NoContent(http.StatusInternalServerError)
 		}
 		return ctx.JSONBlob(http.StatusOK, resp)
+	}
+}
+
+func (p *profileHandler) Barcode() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		_, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return err
+		}
+
+		file, err := ctx.FormFile("file")
+		if err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+		}
+
+		src, err := file.Open()
+		if err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+		}
+
+		buffer := make([]byte, file.Size)
+		_, err = src.Read(buffer)
+		if err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+		}
+		err = src.Close()
+		if err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+		}
+
+		file, err = ctx.FormFile("file")
+		if err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+		}
+		src, err = file.Open()
+		defer func(src multipart.File) {
+			err = src.Close()
+			if err != nil {
+				return
+			}
+		}(src)
+		if err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+		}
+
+		fileType := http.DetectContentType(buffer)
+
+		// Validate File Type
+		if _, ex := constants.ImageTypes[fileType]; !ex {
+			return constants.RespError(ctx, p.logger, requestID, constants.FileTypeIsNotSupported, http.StatusBadRequest)
+		}
+
+		reader := oned.NewEAN13Reader()
+
+		hints := make(map[gozxing.DecodeHintType]interface{})
+
+		// open and decode image file
+		img, _, err := image.Decode(src)
+		if err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+		}
+
+		// prepare BinaryBitmap
+		bmp, err := gozxing.NewBinaryBitmapFromImage(img)
+		if err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+		}
+
+		res, err := reader.Decode(bmp, hints)
+		if err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+		}
+
+		p.logger.Info(res)
+
+		client := http.Client{}
+		req, err := http.NewRequest("GET", "http://www.vidal.ru/api/rest/v1/product/list?filter[barCode]="+res.String(), nil)
+		if err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+		}
+
+		req.Header = http.Header{
+			"X-Token": {"1zDZsiujMdtA"},
+		}
+
+		response, err := client.Do(req)
+		if err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+		}
+
+		defer response.Body.Close()
+
+		scanner := bufio.NewScanner(response.Body)
+		scanner.Scan()
+		answer := scanner.Text()
+
+		p.logger.Info(
+			zap.String("ID", requestID),
+			zap.Int("ANSWER STATUS", http.StatusOK),
+		)
+
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, []byte(answer))
 	}
 }
