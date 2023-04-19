@@ -1,11 +1,11 @@
 package delivery
 
 import (
-	"bufio"
 	"context"
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
+	"io"
 	"main/internal/constants"
 	"main/internal/csrf"
 	profile "main/internal/microservices/profile/proto"
@@ -56,6 +56,7 @@ func (p *profileHandler) Register(router *echo.Echo) {
 	router.GET(constants.GetMedicineURL, p.GetMedicine())
 	router.PUT(constants.EditMedicineURL, p.EditMedicine())
 	router.POST(constants.BarcodeURL, p.Barcode())
+	router.GET(constants.SearchURL, p.Search())
 }
 
 func (p *profileHandler) ParseError(ctx echo.Context, requestID string, err error) error {
@@ -1106,8 +1107,6 @@ func (p *profileHandler) Barcode() echo.HandlerFunc {
 			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
 		}
 
-		p.logger.Info(res)
-
 		client := http.Client{}
 		req, err := http.NewRequest("GET", "http://www.vidal.ru/api/rest/v1/product/list?filter[barCode]="+res.String(), nil)
 		if err != nil {
@@ -1125,18 +1124,90 @@ func (p *profileHandler) Barcode() echo.HandlerFunc {
 
 		defer response.Body.Close()
 
-		scanner := bufio.NewScanner(response.Body)
-		scanner.Scan()
-		answer := scanner.Text()
+		answer, err := io.ReadAll(response.Body)
+		if err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+		}
+
+		if response.Status != "200 OK" {
+			stat := response.Status[:3]
+			statusInt, errAtoi := strconv.Atoi(stat)
+			if errAtoi != nil {
+				resp, errMarshal := easyjson.Marshal(&models.Response{
+					Status:  http.StatusInternalServerError,
+					Message: errAtoi.Error(),
+				})
+				if errMarshal != nil {
+					return ctx.NoContent(http.StatusInternalServerError)
+				}
+				return ctx.JSONBlob(http.StatusInternalServerError, resp)
+			} else {
+				return ctx.JSONBlob(statusInt, []byte(answer))
+			}
+		}
 
 		p.logger.Info(
 			zap.String("ID", requestID),
 			zap.Int("ANSWER STATUS", http.StatusOK),
 		)
 
+		return ctx.JSONBlob(http.StatusOK, []byte(answer))
+	}
+}
+
+func (p *profileHandler) Search() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		_, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
 		if err != nil {
-			return ctx.NoContent(http.StatusInternalServerError)
+			return err
 		}
+
+		searchText := ctx.QueryParam("search_text")
+
+		client := http.Client{}
+		req, err := http.NewRequest("GET", "http://www.vidal.ru/api/rest/v1/product/list?filter[name]="+searchText, nil)
+		if err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+		}
+
+		req.Header = http.Header{
+			"X-Token": {"1zDZsiujMdtA"},
+		}
+
+		response, err := client.Do(req)
+		if err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+		}
+
+		defer response.Body.Close()
+
+		answer, err := io.ReadAll(response.Body)
+		if err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusInternalServerError)
+		}
+
+		if response.Status != "200 OK" {
+			stat := response.Status[:3]
+			statusInt, errAtoi := strconv.Atoi(stat)
+			if errAtoi != nil {
+				resp, errMarshal := easyjson.Marshal(&models.Response{
+					Status:  http.StatusInternalServerError,
+					Message: errAtoi.Error(),
+				})
+				if errMarshal != nil {
+					return ctx.NoContent(http.StatusInternalServerError)
+				}
+				return ctx.JSONBlob(http.StatusInternalServerError, resp)
+			} else {
+				return ctx.JSONBlob(statusInt, []byte(answer))
+			}
+		}
+
+		p.logger.Info(
+			zap.String("ID", requestID),
+			zap.Int("ANSWER STATUS", http.StatusOK),
+		)
+
 		return ctx.JSONBlob(http.StatusOK, []byte(answer))
 	}
 }
