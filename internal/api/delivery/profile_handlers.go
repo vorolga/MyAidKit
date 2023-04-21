@@ -1309,7 +1309,7 @@ func (p *profileHandler) DeleteNotification() echo.HandlerFunc {
 
 		resp, err := easyjson.Marshal(&models.Response{
 			Status:  http.StatusOK,
-			Message: constants.MedicineIsDeleted,
+			Message: constants.NotificationIsDeleted,
 		})
 		if err != nil {
 			return ctx.NoContent(http.StatusInternalServerError)
