@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"main/internal/constants"
 	"main/internal/microservices/profile"
 	proto "main/internal/microservices/profile/proto"
@@ -80,7 +81,7 @@ func (s *Service) AcceptInvitationToFamily(ctx context.Context, data *proto.AddT
 }
 
 func (s *Service) CreateFamily(ctx context.Context, userID *proto.UserID) (*proto.Empty, error) {
-	hasFamily, _, _, err := s.storage.HasFamily(userID.ID)
+	hasFamily, _, _, _, err := s.storage.HasFamily(userID.ID)
 	if err != nil {
 		return &proto.Empty{}, status.Error(codes.Internal, err.Error())
 	}
@@ -98,7 +99,7 @@ func (s *Service) CreateFamily(ctx context.Context, userID *proto.UserID) (*prot
 }
 
 func (s *Service) DeleteFamily(ctx context.Context, userID *proto.UserID) (*proto.Empty, error) {
-	hasFamily, idMainUser, _, err := s.storage.HasFamily(userID.ID)
+	hasFamily, idMainUser, _, _, err := s.storage.HasFamily(userID.ID)
 	if err != nil {
 		return &proto.Empty{}, status.Error(codes.Internal, err.Error())
 	}
@@ -120,7 +121,7 @@ func (s *Service) DeleteFamily(ctx context.Context, userID *proto.UserID) (*prot
 }
 
 func (s *Service) DeleteFromFamily(ctx context.Context, Delete *proto.Delete) (*proto.Empty, error) {
-	hasFamily, idMainUser, _, err := s.storage.HasFamily(Delete.UserID.ID)
+	hasFamily, idMainUser, _, _, err := s.storage.HasFamily(Delete.UserID.ID)
 	if err != nil {
 		return &proto.Empty{}, status.Error(codes.Internal, err.Error())
 	}
@@ -142,7 +143,7 @@ func (s *Service) DeleteFromFamily(ctx context.Context, Delete *proto.Delete) (*
 }
 
 func (s *Service) AddMember(ctx context.Context, data *proto.MemberData) (*proto.Empty, error) {
-	hasFamily, idMainUser, idFamily, err := s.storage.HasFamily(data.IDMainUser)
+	hasFamily, idMainUser, idFamily, _, err := s.storage.HasFamily(data.IDMainUser)
 	if err != nil {
 		return &proto.Empty{}, status.Error(codes.Internal, err.Error())
 	}
@@ -174,7 +175,7 @@ func (s *Service) GetFamily(ctx context.Context, userID *proto.UserID) (*proto.R
 }
 
 func (s *Service) DeleteMember(ctx context.Context, Delete *proto.Delete) (*proto.Empty, error) {
-	hasFamily, idMainUser, _, err := s.storage.HasFamily(Delete.UserID.ID)
+	hasFamily, idMainUser, _, _, err := s.storage.HasFamily(Delete.UserID.ID)
 	if err != nil {
 		return &proto.Empty{}, status.Error(codes.Internal, err.Error())
 	}
@@ -203,7 +204,7 @@ func (s *Service) DeleteMember(ctx context.Context, Delete *proto.Delete) (*prot
 }
 
 func (s *Service) HasFamily(ctx context.Context, userID *proto.UserID) (*proto.HasFamilyResp, error) {
-	has, user, family, err := s.storage.HasFamily(userID.ID)
+	has, user, family, _, err := s.storage.HasFamily(userID.ID)
 	if err != nil {
 		return &proto.HasFamilyResp{}, status.Error(codes.Internal, err.Error())
 	}
@@ -249,7 +250,7 @@ func (s *Service) DeleteMedicine(ctx context.Context, data *proto.DeleteMed) (*p
 }
 
 func (s *Service) GetMedicine(ctx context.Context, userID *proto.UserID) (*proto.MedicineArr, error) {
-	has, _, family, err := s.storage.HasFamily(userID.ID)
+	has, _, family, _, err := s.storage.HasFamily(userID.ID)
 	if err != nil {
 		return &proto.MedicineArr{}, status.Error(codes.Internal, err.Error())
 	}
@@ -283,4 +284,48 @@ func (s *Service) EditMedicine(ctx context.Context, data *proto.GetMedicineData)
 	}
 
 	return &proto.Empty{}, nil
+}
+
+func (s *Service) AddNotification(ctx context.Context, data *proto.NotificationData) (*proto.Empty, error) {
+	err := s.storage.AddNotification(data)
+	if err != nil {
+		return &proto.Empty{}, status.Error(codes.Internal, err.Error())
+	}
+	return &proto.Empty{}, nil
+}
+
+func (s *Service) DeleteNotification(ctx context.Context, data *proto.DeleteNotificationData) (*proto.Empty, error) {
+	err := s.storage.DeleteNotification(data)
+	if err != nil {
+		return &proto.Empty{}, status.Error(codes.Internal, err.Error())
+	}
+
+	return &proto.Empty{}, nil
+}
+
+func (s *Service) GetNotifications(ctx context.Context, userID *proto.UserID) (*proto.NotificationArr, error) {
+	has, _, family, isAdult, err := s.storage.HasFamily(userID.ID)
+	if err != nil {
+		return &proto.NotificationArr{}, status.Error(codes.Internal, err.Error())
+	}
+
+	fmt.Println(has, isAdult)
+
+	if !has || (has && !isAdult) {
+		notifications, err := s.storage.GetNotifications(userID.ID)
+		if err != nil {
+			return &proto.NotificationArr{}, status.Error(codes.Internal, err.Error())
+		}
+		return &proto.NotificationArr{GetNotificationData: notifications}, nil
+	}
+
+	fmt.Println(1)
+
+	notifications, err := s.storage.GetNotificationsFamily(family)
+	if err != nil {
+		return &proto.NotificationArr{}, status.Error(codes.Internal, err.Error())
+	}
+
+	fmt.Println(notifications)
+	return &proto.NotificationArr{GetNotificationData: notifications}, nil
 }

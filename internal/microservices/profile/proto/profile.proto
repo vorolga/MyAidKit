@@ -114,6 +114,28 @@ message MedicineArr {
   repeated GetMedicineData MedicineArr = 1;
 }
 
+message NotificationData {
+  bool IsUser = 2;
+  int64 IDTo = 3;
+  string NameTo = 4;
+  int64 IDMedicine = 5;
+  string NameMedicine = 6;
+  string time = 7;
+}
+
+message GetNotificationData {
+  int64 ID = 1;
+  NotificationData NotificationData = 2;
+}
+
+message DeleteNotificationData {
+  int64 NotificationID = 1;
+}
+
+message NotificationArr {
+  repeated GetNotificationData GetNotificationData = 1;
+}
+
 message Empty { }
 
 service Profile {
@@ -135,4 +157,7 @@ service Profile {
   rpc DeleteMedicine(DeleteMed) returns(Empty) {}
   rpc GetMedicine(UserID) returns(MedicineArr) {}
   rpc EditMedicine(GetMedicineData) returns(Empty) {}
+  rpc AddNotification(NotificationData) returns(Empty) {}
+  rpc DeleteNotification(DeleteNotificationData) returns(Empty) {}
+  rpc GetNotifications(UserID) returns(NotificationArr) {}
 }

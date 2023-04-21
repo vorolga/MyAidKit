@@ -57,6 +57,9 @@ func (p *profileHandler) Register(router *echo.Echo) {
 	router.PUT(constants.EditMedicineURL, p.EditMedicine())
 	router.POST(constants.BarcodeURL, p.Barcode())
 	router.GET(constants.SearchURL, p.Search())
+	router.DELETE(constants.DeleteNotificationURL, p.DeleteNotification())
+	router.POST(constants.AddNotificationURL, p.AddNotification())
+	router.GET(constants.GetNotificationURL, p.GetNotification())
 }
 
 func (p *profileHandler) ParseError(ctx echo.Context, requestID string, err error) error {
@@ -1209,5 +1212,145 @@ func (p *profileHandler) Search() echo.HandlerFunc {
 		)
 
 		return ctx.JSONBlob(http.StatusOK, []byte(answer))
+	}
+}
+
+func (p *profileHandler) AddNotification() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		_, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+
+		notificationData := models.AddNotificationDTO{
+			NameMedicine: "",
+			IDMedicine:   0,
+			ToIsUser:     false,
+			IDToUser:     0,
+			NameTo:       "",
+			Time:         "",
+			TimeZone:     0,
+			CountDays:    0,
+		}
+
+		if err = ctx.Bind(&notificationData); err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusBadRequest)
+		}
+
+		timeZone := ""
+		if notificationData.TimeZone > 0 {
+			timeZone = "+" + strconv.Itoa(int(notificationData.TimeZone))
+		} else {
+			timeZone = strconv.Itoa(int(notificationData.TimeZone))
+		}
+
+		loc := time.FixedZone("UTC"+timeZone, int(notificationData.TimeZone)*3600)
+		currentTime := time.Now().In(loc)
+
+		var firstDay time.Time
+		if currentTime.Format("11:00") > notificationData.Time {
+			firstDay = currentTime.AddDate(0, 0, 1)
+		} else {
+			firstDay = currentTime
+		}
+
+		for i := 0; i < int(notificationData.CountDays); i++ {
+			data := &profile.NotificationData{
+				IsUser:       notificationData.ToIsUser,
+				IDTo:         notificationData.IDToUser,
+				NameTo:       notificationData.NameTo,
+				IDMedicine:   notificationData.IDMedicine,
+				NameMedicine: notificationData.NameMedicine,
+				Time:         firstDay.Add(time.Hour*24*time.Duration(i)).Format("2006-01-02") + " " + notificationData.Time + timeZone,
+			}
+
+			_, err = p.profileMicroservice.AddNotification(context.Background(), data)
+			if err != nil {
+				return p.ParseError(ctx, requestID, err)
+			}
+		}
+
+		p.logger.Info(
+			zap.String("ID", requestID),
+			zap.Int("ANSWER STATUS", http.StatusOK),
+		)
+
+		resp, err := easyjson.Marshal(&models.Response{
+			Status:  http.StatusOK,
+			Message: constants.NotificationsAreAdded,
+		})
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, resp)
+	}
+}
+
+func (p *profileHandler) DeleteNotification() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		_, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return err
+		}
+
+		dataNotification := models.NotificationIDDTO{}
+
+		if err = ctx.Bind(&dataNotification); err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusBadRequest)
+		}
+
+		data := &profile.DeleteNotificationData{NotificationID: dataNotification.ID}
+		_, err = p.profileMicroservice.DeleteNotification(context.Background(), data)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
+
+		p.logger.Info(
+			zap.String("ID", requestID),
+			zap.Int("ANSWER STATUS", http.StatusOK),
+		)
+
+		resp, err := easyjson.Marshal(&models.Response{
+			Status:  http.StatusOK,
+			Message: constants.MedicineIsDeleted,
+		})
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, resp)
+	}
+}
+
+func (p *profileHandler) GetNotification() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return err
+		}
+
+		data := &profile.UserID{
+			ID: userID,
+		}
+		notifications, err := p.profileMicroservice.GetNotifications(context.Background(), data)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
+
+		notificationResult := make([]models.Notification, 0)
+		for _, notification := range notifications.GetNotificationData {
+			notificationResult = append(notificationResult, models.Notification{
+				ID:           notification.ID,
+				IDToUser:     notification.NotificationData.IDTo,
+				NameTo:       notification.NotificationData.NameTo,
+				NameMedicine: notification.NotificationData.NameMedicine,
+				Time:         notification.NotificationData.Time,
+			})
+		}
+
+		resp, err := easyjson.Marshal(&models.ResponseNotification{
+			Status:        200,
+			Notifications: notificationResult,
+		})
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, resp)
 	}
 }

@@ -12,7 +12,7 @@ type Storage interface {
 	UploadAvatar(data *proto.UploadInputFile) (string, error)
 	DeleteFile(string, string) error
 
-	HasFamily(userID int64) (bool, int64, int64, error)
+	HasFamily(userID int64) (bool, int64, int64, bool, error)
 	CreateFamily(userID int64) error
 	DeleteFamily(userID int64) error
 
@@ -29,4 +29,9 @@ type Storage interface {
 	GetMedicine(userID int64) ([]*proto.GetMedicineData, error)
 	GetMedicineFamily(familyID int64) ([]*proto.GetMedicineData, error)
 	EditMedicine(data *proto.GetMedicineData) (string, error)
+
+	AddNotification(data *proto.NotificationData) error
+	DeleteNotification(data *proto.DeleteNotificationData) error
+	GetNotifications(userID int64) ([]*proto.GetNotificationData, error)
+	GetNotificationsFamily(familyID int64) ([]*proto.GetNotificationData, error)
 }

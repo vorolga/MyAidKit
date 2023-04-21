@@ -40,6 +40,9 @@ type ProfileClient interface {
 	DeleteMedicine(ctx context.Context, in *DeleteMed, opts ...grpc.CallOption) (*Empty, error)
 	GetMedicine(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*MedicineArr, error)
 	EditMedicine(ctx context.Context, in *GetMedicineData, opts ...grpc.CallOption) (*Empty, error)
+	AddNotification(ctx context.Context, in *NotificationData, opts ...grpc.CallOption) (*Empty, error)
+	DeleteNotification(ctx context.Context, in *DeleteNotificationData, opts ...grpc.CallOption) (*Empty, error)
+	GetNotifications(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*NotificationArr, error)
 }
 
 type profileClient struct {
@@ -212,6 +215,33 @@ func (c *profileClient) EditMedicine(ctx context.Context, in *GetMedicineData, o
 	return out, nil
 }
 
+func (c *profileClient) AddNotification(ctx context.Context, in *NotificationData, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/profile.Profile/AddNotification", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *profileClient) DeleteNotification(ctx context.Context, in *DeleteNotificationData, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/profile.Profile/DeleteNotification", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *profileClient) GetNotifications(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*NotificationArr, error) {
+	out := new(NotificationArr)
+	err := c.cc.Invoke(ctx, "/profile.Profile/GetNotifications", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProfileServer is the server API for Profile service.
 // All implementations should embed UnimplementedProfileServer
 // for forward compatibility
@@ -234,6 +264,9 @@ type ProfileServer interface {
 	DeleteMedicine(context.Context, *DeleteMed) (*Empty, error)
 	GetMedicine(context.Context, *UserID) (*MedicineArr, error)
 	EditMedicine(context.Context, *GetMedicineData) (*Empty, error)
+	AddNotification(context.Context, *NotificationData) (*Empty, error)
+	DeleteNotification(context.Context, *DeleteNotificationData) (*Empty, error)
+	GetNotifications(context.Context, *UserID) (*NotificationArr, error)
 }
 
 // UnimplementedProfileServer should be embedded to have forward compatible implementations.
@@ -293,6 +326,15 @@ func (UnimplementedProfileServer) GetMedicine(context.Context, *UserID) (*Medici
 }
 func (UnimplementedProfileServer) EditMedicine(context.Context, *GetMedicineData) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EditMedicine not implemented")
+}
+func (UnimplementedProfileServer) AddNotification(context.Context, *NotificationData) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddNotification not implemented")
+}
+func (UnimplementedProfileServer) DeleteNotification(context.Context, *DeleteNotificationData) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteNotification not implemented")
+}
+func (UnimplementedProfileServer) GetNotifications(context.Context, *UserID) (*NotificationArr, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetNotifications not implemented")
 }
 
 // UnsafeProfileServer may be embedded to opt out of forward compatibility for this service.
@@ -630,6 +672,60 @@ func _Profile_EditMedicine_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Profile_AddNotification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NotificationData)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).AddNotification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/AddNotification",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).AddNotification(ctx, req.(*NotificationData))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Profile_DeleteNotification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteNotificationData)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).DeleteNotification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/DeleteNotification",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).DeleteNotification(ctx, req.(*DeleteNotificationData))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Profile_GetNotifications_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).GetNotifications(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/GetNotifications",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).GetNotifications(ctx, req.(*UserID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Profile_ServiceDesc is the grpc.ServiceDesc for Profile service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -708,6 +804,18 @@ var Profile_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EditMedicine",
 			Handler:    _Profile_EditMedicine_Handler,
+		},
+		{
+			MethodName: "AddNotification",
+			Handler:    _Profile_AddNotification_Handler,
+		},
+		{
+			MethodName: "DeleteNotification",
+			Handler:    _Profile_DeleteNotification_Handler,
+		},
+		{
+			MethodName: "GetNotifications",
+			Handler:    _Profile_GetNotifications_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

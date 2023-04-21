@@ -53,10 +53,33 @@ type AddMedicineDTO struct {
 	Count     int64  `json:"count" form:"count"`
 }
 
+type AddNotificationDTO struct {
+	NameMedicine string `json:"name_medicine" form:"name_medicine"`
+	IDMedicine   int64  `json:"id_medicine" form:"id_medicine"`
+	ToIsUser     bool   `json:"to_is_user" form:"to_is_user"`
+	IDToUser     int64  `json:"id_to_user" form:"id_to_user"`
+	NameTo       string `json:"name_to" form:"name_to"`
+	Time         string `json:"time" form:"time"`
+	TimeZone     int64  `json:"time_zone" form:"time_zone"`
+	CountDays    int64  `json:"count_days" form:"count_days"`
+}
+
+type NotificationIDDTO struct {
+	ID int64 `json:"id" form:"id"`
+}
+
 type Medicine struct {
 	ID        int64  `json:"id" form:"id"`
 	Name      string `json:"name" form:"name"`
 	Image     string `json:"image" form:"image"`
 	IsTablets bool   `json:"is_tablets" form:"is_tablets"`
 	Count     int64  `json:"count" form:"count"`
+}
+
+type Notification struct {
+	ID           int64  `json:"id" form:"id"`
+	IDToUser     int64  `json:"id_to_user" form:"id_to_user"`
+	NameTo       string `json:"name_to" form:"name_to"`
+	NameMedicine string `json:"name_medicine" form:"name_medicine"`
+	Time         string `json:"time" form:"time"`
 }

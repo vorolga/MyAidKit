@@ -60,10 +60,15 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
   COMMIT;
 
   BEGIN;
-      create table if not exists type
+      create table if not exists notification_user
       (
-          id serial constraint type_pk primary key,
-          name varchar(100)  not null
+          id serial constraint notification_user_pk primary key,
+          to_is_user bool,
+          id_to_user int,
+          name_to varchar(100),
+          id_medicine int,
+          name_medicine varchar(100),
+          time varchar(100)
       );
   COMMIT;
 

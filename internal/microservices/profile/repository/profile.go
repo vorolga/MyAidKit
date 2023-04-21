@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"main/internal/constants"
 	"main/internal/microservices/auth/utils/hash"
 	"main/internal/microservices/profile"
@@ -42,7 +43,7 @@ func (s Storage) GetUserProfile(userID int64) (*proto.ProfileData, error) {
 		return nil, err
 	}
 
-	has, user, _, err := s.HasFamily(userID)
+	has, user, _, _, err := s.HasFamily(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -218,17 +219,18 @@ func (s Storage) CreateFamily(userID int64) error {
 	return nil
 }
 
-func (s Storage) HasFamily(userID int64) (bool, int64, int64, error) {
-	sqlScript := "SELECT id_family FROM users WHERE id=$1"
+func (s Storage) HasFamily(userID int64) (bool, int64, int64, bool, error) {
+	sqlScript := "SELECT id_family, is_adult FROM users WHERE id=$1"
 
 	var idFamily int64
-	err := s.db.QueryRow(sqlScript, userID).Scan(&idFamily)
+	var isAdult bool
+	err := s.db.QueryRow(sqlScript, userID).Scan(&idFamily, &isAdult)
 	if err != nil {
-		return false, 0, 0, err
+		return false, 0, 0, false, err
 	}
 
 	if idFamily == 0 {
-		return false, 0, 0, nil
+		return false, 0, 0, isAdult, nil
 	}
 
 	sqlScript = "SELECT id_main_user FROM family WHERE id=$1"
@@ -236,10 +238,11 @@ func (s Storage) HasFamily(userID int64) (bool, int64, int64, error) {
 	var idMainUser int64
 	err = s.db.QueryRow(sqlScript, idFamily).Scan(&idMainUser)
 	if err != nil {
-		return false, 0, 0, err
+		return false, 0, 0, false, err
 	}
 
-	return true, idMainUser, idFamily, nil
+	fmt.Println(isAdult)
+	return true, idMainUser, idFamily, isAdult, nil
 }
 
 func (s Storage) DeleteFamily(userID int64) error {
@@ -519,4 +522,85 @@ func (s Storage) EditMedicine(data *proto.GetMedicineData) (string, error) {
 		return "", err
 	}
 	return image, nil
+}
+
+func (s Storage) AddNotification(data *proto.NotificationData) error {
+	sqlScript := "INSERT INTO notification_user(to_is_user, id_to_user, name_to, id_medicine, name_medicine, time) VALUES($1, $2, $3, $4, $5, $6)"
+
+	if _, err := s.db.Exec(sqlScript, data.IsUser, data.IDTo, data.NameTo, data.IDMedicine, data.NameMedicine, data.Time); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s Storage) DeleteNotification(data *proto.DeleteNotificationData) error {
+	sqlScript := "DELETE FROM notification_user WHERE id=$1"
+
+	_, err := s.db.Exec(sqlScript, data.NotificationID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s Storage) GetNotifications(userID int64) ([]*proto.GetNotificationData, error) {
+	notifications := make([]*proto.GetNotificationData, 0)
+	sqlScript := "SELECT id, to_is_user, id_to_user, name_to, id_medicine, name_medicine, time FROM notification_user WHERE id_to_user = $1"
+
+	rows, err := s.db.Query(sqlScript, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var notification proto.GetNotificationData
+		notification.NotificationData = &proto.NotificationData{
+			IsUser:       false,
+			IDTo:         0,
+			NameTo:       "",
+			IDMedicine:   0,
+			NameMedicine: "",
+			Time:         "",
+		}
+		if err = rows.Scan(&notification.ID, &notification.NotificationData.IsUser, &notification.NotificationData.IDTo, &notification.NotificationData.NameTo, &notification.NotificationData.IDMedicine, &notification.NotificationData.NameMedicine, &notification.NotificationData.Time); err != nil {
+			return nil, err
+		}
+
+		notifications = append(notifications, &notification)
+	}
+
+	return notifications, nil
+}
+
+func (s Storage) GetNotificationsFamily(familyID int64) ([]*proto.GetNotificationData, error) {
+	sqlScript := "SELECT notification_user.id, notification_user.to_is_user, notification_user.id_to_user,  notification_user.name_to, notification_user.id_medicine, notification_user.name_medicine, notification_user.time " +
+		"FROM notification_user JOIN users u ON u.id_family = $1 AND notification_user.id_to_user = u.id"
+
+	rows, err := s.db.Query(sqlScript, familyID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	notifications := make([]*proto.GetNotificationData, 0)
+	for rows.Next() {
+		var notification proto.GetNotificationData
+		notification.NotificationData = &proto.NotificationData{
+			IsUser:       false,
+			IDTo:         0,
+			NameTo:       "",
+			IDMedicine:   0,
+			NameMedicine: "",
+			Time:         "",
+		}
+		if err = rows.Scan(&notification.ID, &notification.NotificationData.IsUser, &notification.NotificationData.IDTo, &notification.NotificationData.NameTo, &notification.NotificationData.IDMedicine, &notification.NotificationData.NameMedicine, &notification.NotificationData.Time); err != nil {
+			return nil, err
+		}
+
+		notifications = append(notifications, &notification)
+	}
+
+	return notifications, nil
 }

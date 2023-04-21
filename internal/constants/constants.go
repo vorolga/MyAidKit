@@ -53,6 +53,8 @@ const (
 	InvitationIsSent           = "Invitation is sent"
 	InvitationIsAccepted       = "Invitation is accepted"
 	MedicineIsEdited           = "Medicine is eddited"
+	NotificationsAreAdded      = "Notifications are added"
+	NotificationIsDeleted      = "Notification is deleted"
 )
 
 const (
@@ -78,6 +80,9 @@ const (
 	EditMedicineURL       = "/api/v1/edit/medicine"
 	BarcodeURL            = "/api/v1/barcode"
 	SearchURL             = "/api/v1/search"
+	DeleteNotificationURL = "/api/v1/remove/notification"
+	AddNotificationURL    = "/api/v1/add/notification"
+	GetNotificationURL    = "/api/v1/notifications"
 )
 
 var (
