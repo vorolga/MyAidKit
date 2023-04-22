@@ -1217,7 +1217,7 @@ func (p *profileHandler) Search() echo.HandlerFunc {
 
 func (p *profileHandler) AddNotification() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-		_, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
 
 		notificationData := models.AddNotificationDTO{
 			NameMedicine: "",
@@ -1253,6 +1253,7 @@ func (p *profileHandler) AddNotification() echo.HandlerFunc {
 
 		for i := 0; i < int(notificationData.CountDays); i++ {
 			data := &profile.NotificationData{
+				IDFrom:       userID,
 				IsUser:       notificationData.ToIsUser,
 				IDTo:         notificationData.IDToUser,
 				NameTo:       notificationData.NameTo,

@@ -13,7 +13,7 @@ type ProfileComposite struct {
 
 func NewProfileComposite(postgresComposite *PostgresDBComposite, minioComposite *MinioComposite,
 	redisComposite *RedisComposite) (*ProfileComposite, error) {
-	storage := repository.NewStorage(postgresComposite.db, minioComposite.client, redisComposite.redis)
+	storage := repository.NewStorage(postgresComposite.DB, minioComposite.client, redisComposite.redis)
 	service := usecase.NewService(storage)
 	return &ProfileComposite{
 		Storage: storage,

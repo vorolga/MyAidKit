@@ -92,5 +92,16 @@ services:
       - profile
     ports:
       - "1323:1323"
+  cron:
+    build:
+      context: .
+      dockerfile: ./cmd/cron/Dockerfile
+    restart: always
+    links:
+      - postgres:postgres
+    depends_on:
+      - postgres
+    ports:
+      - "9999:9999"
 
 

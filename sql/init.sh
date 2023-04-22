@@ -63,6 +63,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       create table if not exists notification_user
       (
           id serial constraint notification_user_pk primary key,
+          id_from int,
           to_is_user bool,
           id_to_user int,
           name_to varchar(100),

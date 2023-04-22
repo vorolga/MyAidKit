@@ -525,9 +525,9 @@ func (s Storage) EditMedicine(data *proto.GetMedicineData) (string, error) {
 }
 
 func (s Storage) AddNotification(data *proto.NotificationData) error {
-	sqlScript := "INSERT INTO notification_user(to_is_user, id_to_user, name_to, id_medicine, name_medicine, time) VALUES($1, $2, $3, $4, $5, $6)"
+	sqlScript := "INSERT INTO notification_user(id_from, to_is_user, id_to_user, name_to, id_medicine, name_medicine, time) VALUES($1, $2, $3, $4, $5, $6, $7)"
 
-	if _, err := s.db.Exec(sqlScript, data.IsUser, data.IDTo, data.NameTo, data.IDMedicine, data.NameMedicine, data.Time); err != nil {
+	if _, err := s.db.Exec(sqlScript, data.IDFrom, data.IsUser, data.IDTo, data.NameTo, data.IDMedicine, data.NameMedicine, data.Time); err != nil {
 		return err
 	}
 

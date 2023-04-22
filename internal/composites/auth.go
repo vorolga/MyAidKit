@@ -12,7 +12,7 @@ type AuthComposite struct {
 }
 
 func NewAuthComposite(postgresComposite *PostgresDBComposite, redisComposite *RedisComposite) (*AuthComposite, error) {
-	storage := repository.NewStorage(postgresComposite.db, redisComposite.redis)
+	storage := repository.NewStorage(postgresComposite.DB, redisComposite.redis)
 	service := usecase.NewService(storage)
 	return &AuthComposite{
 		Storage: storage,

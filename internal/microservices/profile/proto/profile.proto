@@ -115,6 +115,7 @@ message MedicineArr {
 }
 
 message NotificationData {
+  int64 IDFrom = 1;
   bool IsUser = 2;
   int64 IDTo = 3;
   string NameTo = 4;
