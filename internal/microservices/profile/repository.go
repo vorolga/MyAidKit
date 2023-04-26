@@ -34,4 +34,6 @@ type Storage interface {
 	DeleteNotification(data *proto.DeleteNotificationData) error
 	GetNotifications(userID int64) ([]*proto.GetNotificationData, error)
 	GetNotificationsFamily(familyID int64) ([]*proto.GetNotificationData, error)
+	AcceptNotification(data *proto.Accept) (int64, error)
+	Substruct(idMedicine, count int64) error
 }

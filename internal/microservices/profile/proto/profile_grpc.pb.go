@@ -43,6 +43,7 @@ type ProfileClient interface {
 	AddNotification(ctx context.Context, in *NotificationData, opts ...grpc.CallOption) (*Empty, error)
 	DeleteNotification(ctx context.Context, in *DeleteNotificationData, opts ...grpc.CallOption) (*Empty, error)
 	GetNotifications(ctx context.Context, in *UserID, opts ...grpc.CallOption) (*NotificationArr, error)
+	AcceptNotification(ctx context.Context, in *Accept, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type profileClient struct {
@@ -242,6 +243,15 @@ func (c *profileClient) GetNotifications(ctx context.Context, in *UserID, opts .
 	return out, nil
 }
 
+func (c *profileClient) AcceptNotification(ctx context.Context, in *Accept, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/profile.Profile/AcceptNotification", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProfileServer is the server API for Profile service.
 // All implementations should embed UnimplementedProfileServer
 // for forward compatibility
@@ -267,6 +277,7 @@ type ProfileServer interface {
 	AddNotification(context.Context, *NotificationData) (*Empty, error)
 	DeleteNotification(context.Context, *DeleteNotificationData) (*Empty, error)
 	GetNotifications(context.Context, *UserID) (*NotificationArr, error)
+	AcceptNotification(context.Context, *Accept) (*Empty, error)
 }
 
 // UnimplementedProfileServer should be embedded to have forward compatible implementations.
@@ -335,6 +346,9 @@ func (UnimplementedProfileServer) DeleteNotification(context.Context, *DeleteNot
 }
 func (UnimplementedProfileServer) GetNotifications(context.Context, *UserID) (*NotificationArr, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNotifications not implemented")
+}
+func (UnimplementedProfileServer) AcceptNotification(context.Context, *Accept) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AcceptNotification not implemented")
 }
 
 // UnsafeProfileServer may be embedded to opt out of forward compatibility for this service.
@@ -726,6 +740,24 @@ func _Profile_GetNotifications_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Profile_AcceptNotification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Accept)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServer).AcceptNotification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/profile.Profile/AcceptNotification",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServer).AcceptNotification(ctx, req.(*Accept))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Profile_ServiceDesc is the grpc.ServiceDesc for Profile service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -816,6 +848,10 @@ var Profile_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetNotifications",
 			Handler:    _Profile_GetNotifications_Handler,
+		},
+		{
+			MethodName: "AcceptNotification",
+			Handler:    _Profile_AcceptNotification_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

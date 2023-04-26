@@ -121,7 +121,9 @@ message NotificationData {
   string NameTo = 4;
   int64 IDMedicine = 5;
   string NameMedicine = 6;
-  string time = 7;
+  bool IsTablets = 7;
+  string time = 8;
+  bool IsAccepted = 9;
 }
 
 message GetNotificationData {
@@ -135,6 +137,11 @@ message DeleteNotificationData {
 
 message NotificationArr {
   repeated GetNotificationData GetNotificationData = 1;
+}
+
+message Accept {
+  int64 ID = 1;
+  int64 Count = 2;
 }
 
 message Empty { }
@@ -161,4 +168,5 @@ service Profile {
   rpc AddNotification(NotificationData) returns(Empty) {}
   rpc DeleteNotification(DeleteNotificationData) returns(Empty) {}
   rpc GetNotifications(UserID) returns(NotificationArr) {}
+  rpc AcceptNotification(Accept) returns(Empty) {}
 }

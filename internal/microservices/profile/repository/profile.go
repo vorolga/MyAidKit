@@ -11,6 +11,7 @@ import (
 	"main/internal/microservices/profile"
 	proto "main/internal/microservices/profile/proto"
 	"main/internal/microservices/profile/utils/images"
+	"strconv"
 
 	"github.com/gofrs/uuid"
 	"github.com/gomodule/redigo/redis"
@@ -525,7 +526,7 @@ func (s Storage) EditMedicine(data *proto.GetMedicineData) (string, error) {
 }
 
 func (s Storage) AddNotification(data *proto.NotificationData) error {
-	sqlScript := "INSERT INTO notification_user(id_from, to_is_user, id_to_user, name_to, id_medicine, name_medicine, time) VALUES($1, $2, $3, $4, $5, $6, $7)"
+	sqlScript := "INSERT INTO notification_user(id_from, to_is_user, id_to_user, name_to, id_medicine, name_medicine, time, is_accepted) VALUES($1, $2, $3, $4, $5, $6, $7, false)"
 
 	if _, err := s.db.Exec(sqlScript, data.IDFrom, data.IsUser, data.IDTo, data.NameTo, data.IDMedicine, data.NameMedicine, data.Time); err != nil {
 		return err
@@ -546,7 +547,7 @@ func (s Storage) DeleteNotification(data *proto.DeleteNotificationData) error {
 
 func (s Storage) GetNotifications(userID int64) ([]*proto.GetNotificationData, error) {
 	notifications := make([]*proto.GetNotificationData, 0)
-	sqlScript := "SELECT id, to_is_user, id_to_user, name_to, id_medicine, name_medicine, time FROM notification_user WHERE id_to_user = $1"
+	sqlScript := "SELECT notification_user.id, to_is_user, id_to_user, name_to, id_medicine, name_medicine, medicine.is_tablets, time, is_accepted FROM notification_user JOIN medicine ON medicine.id = id_medicine WHERE id_to_user = $1"
 
 	rows, err := s.db.Query(sqlScript, userID)
 	if err != nil {
@@ -562,9 +563,11 @@ func (s Storage) GetNotifications(userID int64) ([]*proto.GetNotificationData, e
 			NameTo:       "",
 			IDMedicine:   0,
 			NameMedicine: "",
+			IsTablets:    false,
 			Time:         "",
+			IsAccepted:   false,
 		}
-		if err = rows.Scan(&notification.ID, &notification.NotificationData.IsUser, &notification.NotificationData.IDTo, &notification.NotificationData.NameTo, &notification.NotificationData.IDMedicine, &notification.NotificationData.NameMedicine, &notification.NotificationData.Time); err != nil {
+		if err = rows.Scan(&notification.ID, &notification.NotificationData.IsUser, &notification.NotificationData.IDTo, &notification.NotificationData.NameTo, &notification.NotificationData.IDMedicine, &notification.NotificationData.NameMedicine, &notification.NotificationData.IsTablets, &notification.NotificationData.Time, &notification.NotificationData.IsAccepted); err != nil {
 			return nil, err
 		}
 
@@ -575,8 +578,8 @@ func (s Storage) GetNotifications(userID int64) ([]*proto.GetNotificationData, e
 }
 
 func (s Storage) GetNotificationsFamily(familyID int64) ([]*proto.GetNotificationData, error) {
-	sqlScript := "SELECT notification_user.id, notification_user.to_is_user, notification_user.id_to_user,  notification_user.name_to, notification_user.id_medicine, notification_user.name_medicine, notification_user.time " +
-		"FROM notification_user JOIN users u ON u.id_family = $1 AND notification_user.id_to_user = u.id"
+	sqlScript := "SELECT notification_user.id, notification_user.to_is_user, notification_user.id_to_user,  notification_user.name_to, notification_user.id_medicine, notification_user.name_medicine, medicine.is_tablets, notification_user.time, notification_user.is_accepted " +
+		"FROM notification_user JOIN medicine ON medicine.id = id_medicine JOIN users u ON u.id_family = $1 AND notification_user.id_to_user = u.id"
 
 	rows, err := s.db.Query(sqlScript, familyID)
 	if err != nil {
@@ -593,9 +596,11 @@ func (s Storage) GetNotificationsFamily(familyID int64) ([]*proto.GetNotificatio
 			NameTo:       "",
 			IDMedicine:   0,
 			NameMedicine: "",
+			IsTablets:    false,
 			Time:         "",
+			IsAccepted:   false,
 		}
-		if err = rows.Scan(&notification.ID, &notification.NotificationData.IsUser, &notification.NotificationData.IDTo, &notification.NotificationData.NameTo, &notification.NotificationData.IDMedicine, &notification.NotificationData.NameMedicine, &notification.NotificationData.Time); err != nil {
+		if err = rows.Scan(&notification.ID, &notification.NotificationData.IsUser, &notification.NotificationData.IDTo, &notification.NotificationData.NameTo, &notification.NotificationData.IDMedicine, &notification.NotificationData.NameMedicine, &notification.NotificationData.IsTablets, &notification.NotificationData.Time, &notification.NotificationData.IsAccepted); err != nil {
 			return nil, err
 		}
 
@@ -603,4 +608,28 @@ func (s Storage) GetNotificationsFamily(familyID int64) ([]*proto.GetNotificatio
 	}
 
 	return notifications, nil
+}
+
+func (s Storage) AcceptNotification(data *proto.Accept) (int64, error) {
+	sqlScript := "UPDATE notification_user SET is_accepted = true WHERE id = $1 RETURNING id_medicine"
+
+	var medicineID int64
+	if err := s.db.QueryRow(sqlScript, data.ID).Scan(&medicineID); err != nil {
+		return 0, err
+	}
+
+	return medicineID, nil
+}
+
+func (s Storage) Substruct(idMedicine, count int64) error {
+	sqlScript := "DO $$ DECLARE input_id INT:= " + strconv.Itoa(int(idMedicine)) +
+		"; input_count INT:= " + strconv.Itoa(int(count)) + "; BEGIN IF (SELECT count FROM medicine WHERE id = input_id) - input_count >= 0 " +
+		"THEN UPDATE medicine SET count = count - input_count WHERE ID = input_id; " +
+		"ELSE UPDATE medicine SET count = 0 WHERE ID = input_id; END IF; END $$;"
+
+	_, err := s.db.Exec(sqlScript)
+	if err != nil {
+		return err
+	}
+	return nil
 }

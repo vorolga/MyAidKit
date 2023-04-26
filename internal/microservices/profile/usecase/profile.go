@@ -329,3 +329,19 @@ func (s *Service) GetNotifications(ctx context.Context, userID *proto.UserID) (*
 	fmt.Println(notifications)
 	return &proto.NotificationArr{GetNotificationData: notifications}, nil
 }
+
+func (s *Service) AcceptNotification(ctx context.Context, acceptData *proto.Accept) (*proto.Empty, error) {
+	idMedicine, err := s.storage.AcceptNotification(acceptData)
+	if err != nil {
+		return &proto.Empty{}, status.Error(codes.Internal, err.Error())
+	}
+
+	if acceptData.Count > 0 {
+		err = s.storage.Substruct(idMedicine, acceptData.Count)
+		if err != nil {
+			return &proto.Empty{}, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	return &proto.Empty{}, nil
+}

@@ -69,7 +69,8 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
           name_to varchar(100),
           id_medicine int,
           name_medicine varchar(100),
-          time varchar(100)
+          time varchar(100),
+          is_accepted bool
       );
   COMMIT;
 

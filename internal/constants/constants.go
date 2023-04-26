@@ -55,6 +55,7 @@ const (
 	MedicineIsEdited           = "Medicine is eddited"
 	NotificationsAreAdded      = "Notifications are added"
 	NotificationIsDeleted      = "Notification is deleted"
+	MedicineIsAccepted         = "Medicine is accepted"
 )
 
 const (
@@ -83,6 +84,7 @@ const (
 	DeleteNotificationURL = "/api/v1/remove/notification"
 	AddNotificationURL    = "/api/v1/add/notification"
 	GetNotificationURL    = "/api/v1/notifications"
+	AcceptMedicineURL     = "/api/v1/accept"
 )
 
 var (

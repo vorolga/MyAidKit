@@ -81,5 +81,12 @@ type Notification struct {
 	IDToUser     int64  `json:"id_to_user" form:"id_to_user"`
 	NameTo       string `json:"name_to" form:"name_to"`
 	NameMedicine string `json:"name_medicine" form:"name_medicine"`
+	IsTablets    bool   `json:"is_tablets" form:"is_tablets"`
 	Time         string `json:"time" form:"time"`
+	IsAccepted   bool   `json:"is_accepted" form:"is_accepted"`
+}
+
+type Accept struct {
+	IDNotification int64 `json:"id" form:"id"`
+	Count          int64 `json:"count" form:"count"`
 }

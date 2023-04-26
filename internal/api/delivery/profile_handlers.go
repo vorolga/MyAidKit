@@ -60,6 +60,7 @@ func (p *profileHandler) Register(router *echo.Echo) {
 	router.DELETE(constants.DeleteNotificationURL, p.DeleteNotification())
 	router.POST(constants.AddNotificationURL, p.AddNotification())
 	router.GET(constants.GetNotificationURL, p.GetNotification())
+	router.PUT(constants.AcceptMedicineURL, p.AcceptMedicine())
 }
 
 func (p *profileHandler) ParseError(ctx echo.Context, requestID string, err error) error {
@@ -1341,13 +1342,48 @@ func (p *profileHandler) GetNotification() echo.HandlerFunc {
 				IDToUser:     notification.NotificationData.IDTo,
 				NameTo:       notification.NotificationData.NameTo,
 				NameMedicine: notification.NotificationData.NameMedicine,
+				IsTablets:    notification.NotificationData.IsTablets,
 				Time:         notification.NotificationData.Time,
+				IsAccepted:   notification.NotificationData.IsAccepted,
 			})
 		}
 
 		resp, err := easyjson.Marshal(&models.ResponseNotification{
 			Status:        200,
 			Notifications: notificationResult,
+		})
+		if err != nil {
+			return ctx.NoContent(http.StatusInternalServerError)
+		}
+		return ctx.JSONBlob(http.StatusOK, resp)
+	}
+}
+
+func (p *profileHandler) AcceptMedicine() echo.HandlerFunc {
+	return func(ctx echo.Context) error {
+		_, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return err
+		}
+
+		dataAccept := models.Accept{}
+
+		if err = ctx.Bind(&dataAccept); err != nil {
+			return constants.RespError(ctx, p.logger, requestID, err.Error(), http.StatusBadRequest)
+		}
+
+		data := &profile.Accept{
+			ID:    dataAccept.IDNotification,
+			Count: dataAccept.Count,
+		}
+		_, err = p.profileMicroservice.AcceptNotification(context.Background(), data)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
+
+		resp, err := easyjson.Marshal(&models.Response{
+			Status:  200,
+			Message: constants.MedicineIsAccepted,
 		})
 		if err != nil {
 			return ctx.NoContent(http.StatusInternalServerError)

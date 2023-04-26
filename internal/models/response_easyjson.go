@@ -222,7 +222,7 @@ func easyjson6ff3ac1dDecodeMainInternalModels2(in *jlexer.Lexer, out *ResponseNo
 				in.Delim('[')
 				if out.Notifications == nil {
 					if !in.IsDelim(']') {
-						out.Notifications = make([]Notification, 0, 1)
+						out.Notifications = make([]Notification, 0, 0)
 					} else {
 						out.Notifications = []Notification{}
 					}
@@ -325,8 +325,12 @@ func easyjson6ff3ac1dDecodeMainInternalModels3(in *jlexer.Lexer, out *Notificati
 			out.NameTo = string(in.String())
 		case "name_medicine":
 			out.NameMedicine = string(in.String())
+		case "is_tablets":
+			out.IsTablets = bool(in.Bool())
 		case "time":
 			out.Time = string(in.String())
+		case "is_accepted":
+			out.IsAccepted = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -362,9 +366,19 @@ func easyjson6ff3ac1dEncodeMainInternalModels3(out *jwriter.Writer, in Notificat
 		out.String(string(in.NameMedicine))
 	}
 	{
+		const prefix string = ",\"is_tablets\":"
+		out.RawString(prefix)
+		out.Bool(bool(in.IsTablets))
+	}
+	{
 		const prefix string = ",\"time\":"
 		out.RawString(prefix)
 		out.String(string(in.Time))
+	}
+	{
+		const prefix string = ",\"is_accepted\":"
+		out.RawString(prefix)
+		out.Bool(bool(in.IsAccepted))
 	}
 	out.RawByte('}')
 }
