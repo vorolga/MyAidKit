@@ -92,6 +92,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd ${{ secrets.PROJECT_PATH }}
+            sudo su
             rm -rf .env
             git pull origin main
             touch .env;
