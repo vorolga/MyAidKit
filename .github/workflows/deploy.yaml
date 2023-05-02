@@ -92,9 +92,8 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd ${{ secrets.PROJECT_PATH }}
-            sudo su
             rm -rf .env
-            sudo git pull origin main
+            git pull origin main
             touch .env;
             echo AUTH_HOST=${{ secrets.AUTH_HOST }} >> .env;
             echo AUTH_PORT=${{ secrets.AUTH_PORT }} >> .env;
@@ -116,10 +115,10 @@ jobs:
             echo REDISPROTOCOL=${{ secrets.REDISPROTOCOL }} >> .env;
             cat .env;
             echo "Pull new image"
-            sudo docker-compose -f docker-compose.yml pull
+            docker-compose -f docker-compose.yml pull
             echo "Restart the container"
-            sudo docker-compose -f docker-compose.yml up --force-recreate --build --no-deps -d
+            docker-compose -f docker-compose.yml up --force-recreate --build --no-deps -d
             echo "Delete old image"
-            sudo docker image prune -f
+            docker image prune -f
           
 
