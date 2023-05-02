@@ -52,7 +52,7 @@ func (s *Service) SignUp(ctx context.Context, data *proto.SignUpData) (*proto.Em
 
 	msg := "Подтвердите Email\r\n" +
 		"Чтобы подтвердить Email, перейдите по ссылке: " +
-		"http://" + os.Getenv("HOST") + "/confirm?hash=" + hash.Hash
+		"https://" + os.Getenv("HOST") + "/confirm?hash=" + hash.Hash
 
 	body := []byte(msg)
 
