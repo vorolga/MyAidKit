@@ -21,7 +21,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
           birthday timestamp,
           is_adult bool,
           email_confirmed bool,
-          id_family int
+          id_family int REFERENCES family
       );
 
       create unique index users_email_uindex
@@ -32,8 +32,8 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       create table if not exists members
       (
           id serial constraint members_pk primary key,
-          id_main_user int,
-          id_family int,
+          id_main_user int REFERENCES users,
+          id_family int REFERENCES family ON DELETE CASCADE,
           name varchar(50)  not null,
           avatar varchar(100)
       );
@@ -43,7 +43,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       create table if not exists family
       (
           id serial constraint family_pk primary key,
-          id_main_user int
+          id_main_user int REFERENCES users
       );
   COMMIT;
 
@@ -51,7 +51,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       create table if not exists medicine
       (
           id serial constraint medicine_pk primary key,
-          id_user int,
+          id_user int REFERENCES users,
           name varchar(100)  not null,
           count int,
           image varchar(100),
@@ -63,11 +63,11 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       create table if not exists notification_user
       (
           id serial constraint notification_user_pk primary key,
-          id_from int,
+          id_from int REFERENCES users,
           to_is_user bool,
           id_to_user int,
           name_to varchar(100),
-          id_medicine int,
+          id_medicine int REFERENCES medicine ON DELETE CASCADE,
           name_medicine varchar(100),
           time varchar(100),
           is_accepted bool
@@ -78,8 +78,8 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       create table if not exists medicine_user
       (
           id serial constraint medicine_user_pk primary key,
-          id_user int,
-          id_medicine int
+          id_user int REFERENCES users,
+          id_medicine int REFERENCES medicine ON DELETE CASCADE
       );
   COMMIT;
 

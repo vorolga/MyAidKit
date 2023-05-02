@@ -268,6 +268,12 @@ func (s Storage) DeleteFamily(userID int64) error {
 		return err
 	}
 
+	sqlScript = "DELETE FROM notification_user WHERE to_is_user = false and id_to_user IN (SELECT id FROM members WHERE id_family = $1)"
+	_, err = s.db.Exec(sqlScript, idFamily)
+	if err != nil {
+		return err
+	}
+
 	sqlScript = "DELETE FROM members WHERE id_family = $1"
 	_, err = s.db.Exec(sqlScript, idFamily)
 	if err != nil {
@@ -362,6 +368,12 @@ func (s Storage) DeleteMember(userID int64) (string, error) {
 
 	var avatar string
 	err := s.db.QueryRow(sqlScript, userID).Scan(&avatar)
+	if err != nil {
+		return "", err
+	}
+
+	sqlScript = "DELETE FROM notification_user WHERE to_is_user = false AND id_to_user=$1"
+	_, err = s.db.Exec(sqlScript, userID)
 	if err != nil {
 		return "", err
 	}

@@ -1246,7 +1246,7 @@ func (p *profileHandler) AddNotification() echo.HandlerFunc {
 		currentTime := time.Now().In(loc)
 
 		var firstDay time.Time
-		if currentTime.Format("11:00") > notificationData.Time {
+		if currentTime.Format("15:04") > notificationData.Time {
 			firstDay = currentTime.AddDate(0, 0, 1)
 		} else {
 			firstDay = currentTime
