@@ -351,7 +351,7 @@ func (p *profileHandler) CreateFamily() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
 		if err != nil {
-			return err
+			return p.ParseError(ctx, requestID, err)
 		}
 		data := &profile.UserID{ID: userID}
 		_, err = p.profileMicroservice.CreateFamily(context.Background(), data)
@@ -379,7 +379,7 @@ func (p *profileHandler) DeleteFamily() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
 		if err != nil {
-			return err
+			return p.ParseError(ctx, requestID, err)
 		}
 		data := &profile.UserID{ID: userID}
 		_, err = p.profileMicroservice.DeleteFamily(context.Background(), data)
@@ -407,7 +407,7 @@ func (p *profileHandler) RemoveUser() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
 		if err != nil {
-			return err
+			return p.ParseError(ctx, requestID, err)
 		}
 		data := &profile.Delete{UserID: &profile.UserID{ID: userID}, UserToDelete: &profile.UserID{ID: 0}}
 
@@ -443,7 +443,7 @@ func (p *profileHandler) RemoveMember() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
 		if err != nil {
-			return err
+			return p.ParseError(ctx, requestID, err)
 		}
 		data := &profile.Delete{UserID: &profile.UserID{ID: userID}, UserToDelete: &profile.UserID{ID: 0}}
 
@@ -478,6 +478,9 @@ func (p *profileHandler) RemoveMember() echo.HandlerFunc {
 func (p *profileHandler) AddMember() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
 
 		fileName := constants.DefaultImage
 		file, err := ctx.FormFile("file")
@@ -578,7 +581,7 @@ func (p *profileHandler) GetFamily() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
 		if err != nil {
-			return err
+			return p.ParseError(ctx, requestID, err)
 		}
 		data := &profile.UserID{
 			ID: userID,
@@ -615,7 +618,7 @@ func (p *profileHandler) Invite() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
 		if err != nil {
-			return err
+			return p.ParseError(ctx, requestID, err)
 		}
 
 		userData := models.InviteUserDTO{}
@@ -767,6 +770,9 @@ func (p *profileHandler) AcceptInvitation() echo.HandlerFunc {
 func (p *profileHandler) AddMedicine() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
 
 		fileName := constants.DefaultMedicine
 		file, err := ctx.FormFile("file")
@@ -869,7 +875,7 @@ func (p *profileHandler) DeleteMedicine() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		_, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
 		if err != nil {
-			return err
+			return p.ParseError(ctx, requestID, err)
 		}
 
 		dataMedicine := models.MedecineIDDTO{}
@@ -904,7 +910,7 @@ func (p *profileHandler) GetMedicine() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
 		if err != nil {
-			return err
+			return p.ParseError(ctx, requestID, err)
 		}
 
 		data := &profile.UserID{
@@ -940,6 +946,9 @@ func (p *profileHandler) GetMedicine() echo.HandlerFunc {
 func (p *profileHandler) EditMedicine() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
 
 		fileName := constants.DefaultMedicine
 		file, err := ctx.FormFile("file")
@@ -1045,7 +1054,7 @@ func (p *profileHandler) Barcode() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		_, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
 		if err != nil {
-			return err
+			return p.ParseError(ctx, requestID, err)
 		}
 
 		file, err := ctx.FormFile("file")
@@ -1163,7 +1172,7 @@ func (p *profileHandler) Search() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		_, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
 		if err != nil {
-			return err
+			return p.ParseError(ctx, requestID, err)
 		}
 
 		searchText := ctx.QueryParam("search_text")
@@ -1219,6 +1228,9 @@ func (p *profileHandler) Search() echo.HandlerFunc {
 func (p *profileHandler) AddNotification() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
+		if err != nil {
+			return p.ParseError(ctx, requestID, err)
+		}
 
 		notificationData := models.AddNotificationDTO{
 			NameMedicine: "",
@@ -1289,7 +1301,7 @@ func (p *profileHandler) DeleteNotification() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		_, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
 		if err != nil {
-			return err
+			return p.ParseError(ctx, requestID, err)
 		}
 
 		dataNotification := models.NotificationIDDTO{}
@@ -1324,7 +1336,7 @@ func (p *profileHandler) GetNotification() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		userID, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
 		if err != nil {
-			return err
+			return p.ParseError(ctx, requestID, err)
 		}
 
 		data := &profile.UserID{
@@ -1363,7 +1375,7 @@ func (p *profileHandler) AcceptMedicine() echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		_, requestID, err := constants.DefaultUserChecks(ctx, p.logger)
 		if err != nil {
-			return err
+			return p.ParseError(ctx, requestID, err)
 		}
 
 		dataAccept := models.Accept{}
