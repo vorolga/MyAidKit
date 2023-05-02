@@ -1,0 +1,125 @@
+name: deploy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build Docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Create env file
+        run: touch .env;
+          echo AUTH_HOST=${{ secrets.AUTH_HOST }} >> .env;
+          echo AUTH_PORT=${{ secrets.AUTH_PORT }} >> .env;
+          echo CSRF_SECRET=${{ secrets.CSRF_SECRET }} >> .env;
+          echo DBHOST=${{ secrets.DBHOST }} >> .env;
+          echo DBNAME=${{ secrets.DBNAME }} >> .env;
+          echo DBPASSWORD=${{ secrets.DBPASSWORD }} >> .env;
+          echo DBPORT=${{ secrets.DBPORT }} >> .env;
+          echo DBUSER=${{ secrets.DBUSER }} >> .env;
+          echo EMAILPASSWORD=${{ secrets.EMAILPASSWORD }} >> .env;
+          echo HOST=${{ secrets.HOST }} >> .env;
+          echo MINIOPASSWORD=${{ secrets.MINIOPASSWORD }} >> .env;
+          echo MINIOURL=${{ secrets.MINIOURL }} >> .env;
+          echo MINIOUSER=${{ secrets.MINIOUSER }} >> .env;
+          echo PROFILE_HOST=${{ secrets.PROFILE_HOST }} >> .env;
+          echo PROFILE_PORT=${{ secrets.PROFILE_PORT }} >> .env;
+          echo REDISHOST=${{ secrets.REDISHOST }} >> .env;
+          echo REDISPORT=${{ secrets.REDISPORT }} >> .env;
+          echo REDISPROTOCOL=${{ secrets.REDISPROTOCOL }} >> .env;
+          cat .env;
+          chmod 666 .env;
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to Docker
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Build and push authorization
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./cmd/auth/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: vor0lga/myaidkitauth:latest
+      - name: Build and push profile
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./cmd/profile/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: vor0lga/myaidkitprofile:latest
+      - name: Build and push cron
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./cmd/cron/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: vor0lga/myaidkitcron:latest
+      - name: Build and push main
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./cmd/main/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: vor0lga/myaidkitmain:latest
+  deploy:
+    needs: build
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd ${{ secrets.PROJECT_PATH }}
+            sudo su
+            rm -rf .env
+            sudo git pull origin main
+            touch .env;
+            echo AUTH_HOST=${{ secrets.AUTH_HOST }} >> .env;
+            echo AUTH_PORT=${{ secrets.AUTH_PORT }} >> .env;
+            echo CSRF_SECRET=${{ secrets.CSRF_SECRET }} >> .env;
+            echo DBHOST=${{ secrets.DBHOST }} >> .env;
+            echo DBNAME=${{ secrets.DBNAME }} >> .env;
+            echo DBPASSWORD=${{ secrets.DBPASSWORD }} >> .env;
+            echo DBPORT=${{ secrets.DBPORT }} >> .env;
+            echo DBUSER=${{ secrets.DBUSER }} >> .env;
+            echo EMAILPASSWORD=${{ secrets.EMAILPASSWORD }} >> .env;
+            echo HOST=${{ secrets.HOST }} >> .env;
+            echo MINIOPASSWORD=${{ secrets.MINIOPASSWORD }} >> .env;
+            echo MINIOURL=${{ secrets.MINIOURL }} >> .env;
+            echo MINIOUSER=${{ secrets.MINIOUSER }} >> .env;
+            echo PROFILE_HOST=${{ secrets.PROFILE_HOST }} >> .env;
+            echo PROFILE_PORT=${{ secrets.PROFILE_PORT }} >> .env;
+            echo REDISHOST=${{ secrets.REDISHOST }} >> .env;
+            echo REDISPORT=${{ secrets.REDISPORT }} >> .env;
+            echo REDISPROTOCOL=${{ secrets.REDISPROTOCOL }} >> .env;
+            cat .env;
+            echo "Pull new image"
+            sudo docker-compose -f docker-compose.yml pull
+            echo "Restart the container"
+            sudo docker-compose -f docker-compose.yml up --force-recreate --build --no-deps -d
+            echo "Delete old image"
+            sudo docker image prune -f
+          
+

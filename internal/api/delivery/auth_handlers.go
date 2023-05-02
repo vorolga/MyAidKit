@@ -6,6 +6,7 @@ import (
 	proto "main/internal/microservices/auth/proto"
 	"main/internal/models"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/mailru/easyjson"
@@ -130,7 +131,7 @@ func (a *authHandler) ConfirmEmail() echo.HandlerFunc {
 			return ctx.JSONBlob(http.StatusInternalServerError, resp)
 		}
 
-		hash := ctx.QueryParam("hash")
+		hash := strings.ReplaceAll(ctx.Request().Header.Get("Req"), "/confirm?hash=", "")
 
 		data := &proto.Hash{Hash: hash}
 		_, err := a.authMicroservice.ConfirmEmail(context.Background(), data)

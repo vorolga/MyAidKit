@@ -21,11 +21,19 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
           birthday timestamp,
           is_adult bool,
           email_confirmed bool,
-          id_family int REFERENCES family
+          id_family int
       );
 
       create unique index users_email_uindex
             on users (email);
+  COMMIT;
+
+  BEGIN;
+      create table if not exists family
+      (
+          id serial constraint family_pk primary key,
+          id_main_user int REFERENCES users
+      );
   COMMIT;
 
   BEGIN;
@@ -36,14 +44,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
           id_family int REFERENCES family ON DELETE CASCADE,
           name varchar(50)  not null,
           avatar varchar(100)
-      );
-  COMMIT;
-
-  BEGIN;
-      create table if not exists family
-      (
-          id serial constraint family_pk primary key,
-          id_main_user int REFERENCES users
       );
   COMMIT;
 

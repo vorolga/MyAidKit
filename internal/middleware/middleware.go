@@ -91,7 +91,7 @@ func (m Middleware) CheckAuthorization() echo.MiddlewareFunc {
 func (m Middleware) CORS() echo.MiddlewareFunc {
 	return middleware.CORSWithConfig(middleware.CORSConfig{
 		Skipper:          nil,
-		AllowOrigins:     []string{"http://localhost:8080", "http://94.139.246.97:8080", "http://myaidkit.ru:8080"},
+		AllowOrigins:     []string{"http://localhost:8080", "http://94.139.246.97:8080", "http://myaidkit.ru:8080", "http://myaidkit.ru", "myaidkit.ru:8080", "https://myaidkit.ru"},
 		AllowOriginFunc:  nil,
 		AllowMethods:     nil,
 		AllowHeaders:     []string{"Accept", "Cache-Control", "Content-Type", "X-Requested-With", "csrf-token", "Access-Control-Allow-Credentials"},
