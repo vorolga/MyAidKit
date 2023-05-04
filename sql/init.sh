@@ -121,4 +121,3 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
   INSERT INTO emails(domen, name, link) VALUES('mail.kz', 'Почта mail.kz', 'http://mail.kz/');
 
 EOSQL
-
