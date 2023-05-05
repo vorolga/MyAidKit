@@ -117,8 +117,8 @@ services:
       - minio
       - main
     volumes:
-      - /etc/letsencrypt/live/myaidkit.ru/fullchain.pem:/etc/letsencrypt/live/myaidkit.ru/fullchain.pem
-      - /etc/letsencrypt/live/myaidkit.ru/privkey.pem:/etc/letsencrypt/live/myaidkit.ru/privkey.pem
+      - /home/ubuntu/myaidkit.ru.crt:/etc/ssl/myaidkit.ru.crt
+      - /home/ubuntu/myaidkit.ru.key:/etc/ssl/myaidkit.ru.key  
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
     ports:
       - "80:80"
