@@ -80,7 +80,9 @@ func SendNotifications(postgresDBC *composites.PostgresDBComposite) {
 
 		if notificationFrom.IDFrom == notificationFrom.IDTo && notificationFrom.ToIsUser {
 			toList := []string{notificationFrom.Email}
-			msg := "Вам неообходимо принять " + notificationFrom.NameMedicine
+			msg := "Вам неообходимо принять " + notificationFrom.NameMedicine + "\r\n" +
+				"Зайдите в приложение и отметьте количество выпитых таблеток или просто нажмите \"Принять\", если выпитое лекарство не является таблеткой.\r\n" +
+				"https://myaidkit.ru"
 
 			body := []byte(msg)
 
@@ -106,7 +108,9 @@ func SendNotifications(postgresDBC *composites.PostgresDBComposite) {
 						}
 
 						toList := []string{email}
-						msg := "Члену семьи " + notificationFrom.NameTo + " необходимо принять " + notificationFrom.NameMedicine
+						msg := "Члену семьи " + notificationFrom.NameTo + " необходимо принять " + notificationFrom.NameMedicine + "\r\n" +
+							"Зайдите в приложение и отметьте количество выпитых таблеток или просто нажмите \"Принять\", если выпитое лекарство не является таблеткой.\r\n" +
+							"https://myaidkit.ru"
 						body := []byte(msg)
 
 						authSMTP := smtp.PlainAuth("", from, password, host)
@@ -134,7 +138,9 @@ func SendNotifications(postgresDBC *composites.PostgresDBComposite) {
 
 						if id == notificationFrom.IDTo {
 							toList := []string{email}
-							msg := "Вам неообходимо принять " + notificationFrom.NameMedicine
+							msg := "Вам неообходимо принять " + notificationFrom.NameMedicine + "\r\n" +
+								"Зайдите в приложение и отметьте количество выпитых таблеток или просто нажмите \"Принять\", если выпитое лекарство не является таблеткой.\r\n" +
+								"https://myaidkit.ru"
 
 							body := []byte(msg)
 

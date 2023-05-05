@@ -15,6 +15,7 @@ import (
 	"net/smtp"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mailru/easyjson"
@@ -687,7 +688,7 @@ func (p *profileHandler) Invite() echo.HandlerFunc {
 		port := "587"
 
 		msg := "Вам пришло приглашение в семью\r\n" +
-			"Чтобы принять, перейдите по ссылке: " + "http://" + os.Getenv("HOST") +
+			"Чтобы принять, перейдите по ссылке: " + "https://" + os.Getenv("HOST") +
 			"/accept?family=" + strconv.Itoa(int(hasFamilyResp.IDFamily)) +
 			"&email=" + userData.Email + "&adult=" + strconv.FormatBool(userData.Adult)
 
@@ -727,9 +728,11 @@ func (p *profileHandler) AcceptInvitation() echo.HandlerFunc {
 			return ctx.JSONBlob(http.StatusInternalServerError, resp)
 		}
 
-		family := ctx.QueryParam("family")
-		email := ctx.QueryParam("email")
-		adult := ctx.QueryParam("adult")
+		tmp := strings.Fields(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(ctx.Request().Header.Get("Req"), "/accept?family=", ""), "&email=", " "), "&adult=", " "))
+
+		family := tmp[0]
+		email := tmp[1]
+		adult := tmp[2]
 
 		familyID, err := strconv.Atoi(family)
 		if err != nil {
