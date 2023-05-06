@@ -42,7 +42,7 @@ func (s *Service) SignUp(ctx context.Context, data *proto.SignUpData) (*proto.Em
 		return &proto.EmailLink{}, status.Error(codes.Internal, err.Error())
 	}
 
-	from := "vorrovvorrov@gmail.com"
+	from := "myaidkit@gmail.com"
 	password := os.Getenv("EMAILPASSWORD")
 
 	toList := []string{data.Email}

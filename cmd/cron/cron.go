@@ -49,7 +49,7 @@ func SendNotifications(postgresDBC *composites.PostgresDBComposite) {
 	loc := time.UTC
 	currentTime := time.Now().In(loc).Format("2006-01-02 15:04")
 
-	from := "vorrovvorrov@gmail.com"
+	from := "myaidkit@gmail.com"
 	password := os.Getenv("EMAILPASSWORD")
 
 	host := "smtp.gmail.com"

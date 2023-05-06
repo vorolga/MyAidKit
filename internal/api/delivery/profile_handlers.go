@@ -679,7 +679,7 @@ func (p *profileHandler) Invite() echo.HandlerFunc {
 			return ctx.JSONBlob(http.StatusBadRequest, resp)
 		}
 
-		from := "vorrovvorrov@gmail.com"
+		from := "myaidkit@gmail.com"
 		password := os.Getenv("EMAILPASSWORD")
 
 		toList := []string{userData.Email}
