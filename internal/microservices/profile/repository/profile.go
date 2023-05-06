@@ -559,7 +559,7 @@ func (s Storage) DeleteNotification(data *proto.DeleteNotificationData) error {
 
 func (s Storage) GetNotifications(userID int64) ([]*proto.GetNotificationData, error) {
 	notifications := make([]*proto.GetNotificationData, 0)
-	sqlScript := "SELECT notification_user.id, to_is_user, id_to_user, name_to, id_medicine, name_medicine, medicine.is_tablets, time, is_accepted FROM notification_user JOIN medicine ON medicine.id = id_medicine WHERE id_to_user = $1"
+	sqlScript := "SELECT notification_user.id, to_is_user, id_to_user, u.name, id_medicine, medicine.name, medicine.is_tablets, time, is_accepted FROM notification_user JOIN medicine ON medicine.id = id_medicine JOIN users u ON notification_user.id_to_user = u.id AND id_to_user = $1"
 
 	rows, err := s.db.Query(sqlScript, userID)
 	if err != nil {
@@ -590,7 +590,7 @@ func (s Storage) GetNotifications(userID int64) ([]*proto.GetNotificationData, e
 }
 
 func (s Storage) GetNotificationsFamily(familyID int64) ([]*proto.GetNotificationData, error) {
-	sqlScript := "SELECT notification_user.id, notification_user.to_is_user, notification_user.id_to_user,  notification_user.name_to, notification_user.id_medicine, notification_user.name_medicine, medicine.is_tablets, notification_user.time, notification_user.is_accepted " +
+	sqlScript := "SELECT notification_user.id, notification_user.to_is_user, notification_user.id_to_user, u.name, notification_user.id_medicine, medicine.name, medicine.is_tablets, notification_user.time, notification_user.is_accepted " +
 		"FROM notification_user JOIN medicine ON medicine.id = id_medicine JOIN users u ON u.id_family = $1 AND notification_user.id_to_user = u.id"
 
 	rows, err := s.db.Query(sqlScript, familyID)
