@@ -25,7 +25,7 @@ func main() {
 	defer scheduler.Stop()
 
 	scheduler.AddFunc("30 2 * * *", func() { DeleteNotifications(postgresDBC) })
-	scheduler.AddFunc("0 * * * *", func() { SendNotifications(postgresDBC) })
+	scheduler.AddFunc("* * * * *", func() { SendNotifications(postgresDBC) })
 
 	go scheduler.Start()
 

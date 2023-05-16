@@ -26,11 +26,15 @@ services:
     ports:
       - "5432:5432"
   redis:
-    image: redis:alpine
-    command: redis-server --appendonly yes --replica-read-only no
+    image: redis:7.0.11-alpine
+    command: redis-server  /usr/local/etc/redis/redis.conf
+    volumes:
+      - /home/ubuntu/redis-no-persistence.conf:/usr/local/etc/redis/redis.conf
     restart: always
     ports:
       - "6379:6379"
+    expose:
+      - 6379
   minio:
     image: minio/minio:latest
     command: server --console-address ":9001" /data/
